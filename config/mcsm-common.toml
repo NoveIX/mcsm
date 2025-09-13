@@ -1,0 +1,14 @@
+# Server startup file. Provided by the JAR installer.
+RunFile=run.sh
+
+# Automatic restart in case of crash
+CrashHandle=true
+
+# ======================================[ Git integration ]======================================= #
+
+# Enable Git integration
+GitEnable=true
+
+# Repository Read only key
+GitSSHPublicKeyDirectLink=
+GitSSHPrivateKeyDirectLink=
