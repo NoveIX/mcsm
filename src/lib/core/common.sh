@@ -23,6 +23,27 @@ format_duration() {
     result+="${seconds}s"
 
     # Remove trailing space and return the formatted duration string
-    trim=${result% }
-    printf '%s\n' "$trim"
+    printf '%s\n' "${result% }"
+}
+
+format_durationms() {
+    local total_ms=${1:-0}
+
+    local days=$(( total_ms / 86400000 ))
+    local hours=$(( (total_ms % 86400000) / 3600000 ))
+    local minutes=$(( (total_ms % 3600000) / 60000 ))
+    local seconds=$(( (total_ms % 60000) / 1000 ))
+    local milliseconds=$(( total_ms % 1000 ))
+
+    local result
+
+    # Construct the formatted duration string based on non-zero time components
+    (( days > 0 )) && result+="${days}d "
+    (( hours > 0 )) && result+="${hours}h "
+    (( minutes > 0 )) && result+="${minutes}m "
+    (( seconds > 0 || result )) && result+="${seconds}s "
+    (( milliseconds > 0 || !result )) && result+="${milliseconds}ms"
+
+    # Remove trailing space and return the formatted duration string
+    printf '%s\n' "${result% }"
 }
