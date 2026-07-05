@@ -15,6 +15,25 @@ exists_tmux() {
     tmux has-session -t "$session" 2>/dev/null
 }
 
+exists_tmux_window() {
+    local session="$1"
+    local window="$2"
+
+    # Check mandatory parameters
+    require_param "session" "$session" "exists_tmux_window" || return 1
+    require_param "window" "$window" "exists_tmux_window" || return 1
+
+    # First check session exists
+    if ! tmux has-session -t "$session" 2>/dev/null; then
+        log_error "tmux session $session not found" "print"
+        return 1
+    fi
+
+    # Check window exists inside session
+    tmux list-windows -t "$session" -F "#{window_index}" 2>/dev/null \
+        | grep -qx "$window"
+}
+
 attach_tmux() {
     local session="$1"
     local window="${2:-0}"
@@ -59,12 +78,14 @@ attach_tmux() {
 
 send_tmux() {
     local session="$1"
+    local window="$2"
 
     # Check mandatory parameters
     require_param "session" "$session" "send_tmux" || return 1
+    require_param "window" "$window" "send_tmux" || return 1
 
     # Shift the command arguments to get the actual command to send
-    shift
+    shift 2
 
     # Check if command is provided
     if [[ $# -eq 0 ]]; then

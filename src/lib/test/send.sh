@@ -55,7 +55,7 @@ send_server() {
 
     # Send command to tmux session if it exists
     if exists_tmux "$session"; then
-        if send_tmux "$session" "$cmd"; then
+        if send_tmux "$session" "0" "$cmd"; then
             log_info "sent to $session: $cmd"
             return 0
         fi
