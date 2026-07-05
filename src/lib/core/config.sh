@@ -62,8 +62,12 @@ default_config_backup() {
 EnableBackup=false
 
 # Backup archive format
-# Supported: zip, tar.gz, tar.bz2, tar.xz, tar.zst (if available)
-# zip is the default and most widely supported format. Requires zip installed on the system.
+# Supported: zip, tar.gz, tar.xz, tar.zst
+# Required tools:
+#   zip:     zip command-line utility (included in most systems)
+#   tar.gz:  tar with gzip support (requires gzip installed)
+#   tar.xz:  tar with xz support   (requires xz-utils installed)
+#   tar.zst: tar with zstd support (requires zstd installed)
 BackupFormat=zip
 
 # Backup delay in minutes.
