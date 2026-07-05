@@ -37,6 +37,47 @@ remove_restartctl() {
 wait_pattern() {
     local file="$1"
     local pattern="$2"
+    local timeout="${3:-30}"   # secondi
+    local elapsed=0
 
-    tail -F "$file" 2>/dev/null | grep -q --line-buffered "$pattern"
+    while (( elapsed < timeout )); do
+        if tail -n 0 -F "$file" 2>/dev/null | grep -q --line-buffered "$pattern"; then
+            return 0
+        fi
+
+        sleep 1
+        ((elapsed++))
+    done
+
+    return 1
+}
+
+check_backup() {
+    case "${1,,}" in
+        zip)
+            check_command "zip" || return 1
+        ;;
+
+        tar.gz)
+            check_command "tar" || return 1
+            check_command "gzip" || return 1
+        ;;
+
+        tar.xz)
+            check_command "tar" || return 1
+            check_command "xz" || return 1
+        ;;
+
+        tar.zst)
+            check_command "tar" || return 1
+            check_command "zstd" || return 1
+        ;;
+
+        *)
+            log_error "unsupported backup format: ${1,,}" "print"
+            return 1
+        ;;
+    esac
+
+    return 0
 }
