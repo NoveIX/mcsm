@@ -21,7 +21,7 @@ readonly core_dir="$mcsl_dir/src/lib/core"
 
 # Runtime directory and control files
 readonly runtime_dir="$mcsl_dir/.runtime"
-readonly mcslctl="$runtime_dir/mcslctl"
+readonly mcslctl="$runtime_dir/runtimectl"
 readonly crashctl="$runtime_dir/crashctl"
 readonly uptimectl="$runtime_dir/uptimectl"
 readonly restartctl="$runtime_dir/restartctl"
