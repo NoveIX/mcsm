@@ -30,7 +30,7 @@ readonly core_dir="$mcsl_dir/src/lib/core"
 
 # Runtime directory and control files
 readonly runtime_dir="$mcsl_dir/.runtime"
-readonly mcslctl="$runtime_dir/mcslctl"
+readonly mcslctl="$runtime_dir/runtimectl"
 readonly crashctl="$runtime_dir/crashctl"
 
 # Backup configuration variables
@@ -143,16 +143,16 @@ while [[ "${runtime_status,,}" != "stop" ]]; do
     ts=$(date +%Y-%m-%d-%H-%M-%S)
 
     # Check if the tmux session exists
-    if ! exists_tmux_window "$session_name" "0"; then
-        log_error "tmux window 0 not found in session $session_name" "print"
+    if ! exists_tmux_window "$SESSION_NAME" "0"; then
+        log_error "tmux window 0 not found in session $SESSION_NAME" "print"
         runtime_status="stop"; continue
     fi
 
     sts=$(date +%s%3N)
 
     # Send save-all command to the tmux session and wait for the save to complete
-    if ! send_tmux "$session_name" "0" "save-all flush"; then
-        log_error "failed to send save-all command to $session_name" "print"
+    if ! send_tmux "$SESSION_NAME" "0" "save-all flush"; then
+        log_error "failed to send save-all command to $SESSION_NAME" "print"
         runtime_status="stop"; continue
     fi
 
@@ -163,8 +163,8 @@ while [[ "${runtime_status,,}" != "stop" ]]; do
     fi
 
     # Send a message to the tmux session indicating that the backup is starting
-    if ! send_tmux "$session_name" "0" "say Starting Server backup"; then
-        log_error "failed to send message to $session_name" "print"
+    if ! send_tmux "$SESSION_NAME" "0" "say Starting Server backup"; then
+        log_error "failed to send message to $SESSION_NAME" "print"
         runtime_status="stop"; continue
     fi
 
@@ -206,7 +206,7 @@ while [[ "${runtime_status,,}" != "stop" ]]; do
     log_info "new backup created at $archive_file size: $hbytes took: $(format_durationms "$uts") sha1: $sha1" "print"
 
     # Send a message to the tmux session indicating that the backup has finished
-    send_tmux "$session_name" "0" "say Backup finished in $(format_durationms "$uts")" || true
+    send_tmux "$SESSION_NAME" "0" "say Backup finished in $(format_durationms "$uts")" || true
 done
 
 # Stop mcsl backup process

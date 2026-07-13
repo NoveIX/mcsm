@@ -7,29 +7,6 @@
 
 #set -euo pipefail
 
-# ===============================[ Parameter ]================================ #
-
-# Define the directory of the script and its name
-readonly mcsl_dir="$1"
-readonly log_mode="$2"
-readonly mcsl_name="$(basename -- "${BASH_SOURCE[0]}")"
-
-# Source directories
-readonly cfg_dir="$mcsl_dir/cfg"
-readonly logs_dir="$mcsl_dir/logs"
-readonly core_dir="$mcsl_dir/src/lib/core"
-
-# Runtime directory and control files
-readonly runtime_dir="$mcsl_dir/.runtime"
-readonly mcslctl="$runtime_dir/runtimectl"
-readonly crashctl="$runtime_dir/crashctl"
-readonly uptimectl="$runtime_dir/uptimectl"
-readonly restartctl="$runtime_dir/restartctl"
-
-# Runtime state variables
-runtime_status="run"
-crash_count=0
-
 # ================================[ Function ]================================ #
 
 pause() {
@@ -37,53 +14,71 @@ pause() {
     exit 1
 }
 
+# ===============================[ Parameter ]================================ #
+
+# service parameters
+readonly MCSL_DIR="$1"
+readonly LOG_MODE="$2"
+
+# ===============================[ constants ]================================ #
+
+# Resolve the absolute path of the mcsl installation directory.
+readonly MCSL_NAME="$(basename -- "${BASH_SOURCE[0]}")"
+readonly IMPORTSH="$MCSL_DIR/src/lib/core/import.sh"
+
 # ==============================[ Import module ]============================= #
 
 # Check if loader module exists
-if [[ ! -f "$core_dir/loader.sh" ]]; then
-    printf 'fatal: module loader.sh not found. required to execute script %s.\n' "$mcsl_name" >&2
+if [[ ! -f "$IMPORTSH" ]]; then
+    printf 'fatal: module import.sh not found. Required to execute script %s.\n' "$MCSL_NAME"
     pause
 fi
 
-# Load loader module
-source "$core_dir/loader.sh"
+# Load import module
+source "$IMPORTSH"
 
 # Load required module
-load_module "$core_dir/logger.sh" || pause
-load_module "$core_dir/parameter.sh" || pause
-load_module "$core_dir/config.sh" || pause
-load_module "$core_dir/common.sh" || pause
-load_module "$core_dir/notifier.sh" || pause
+import "lib.core.ctx" || pause
+import "lib.core.logger" || pause
+import "lib.config.runtime.read" || pause
+import "lib.config.backup.read" || pause
+import "lib.filesystem.create" || pause
+import "lib.filesystem.remove" || pause
+import "lib.util.convert.second" || pause
 
 # ===========================[ runtime bootstrap ]============================ #
 
 # Generate log setting
-log_setting "$logs_dir/runtime" "info" "noprint" "$log_mode"
+log_setting "$LOGS_DIR/runtime" "info" "noprint" "$LOG_MODE"
 
 # Read mcsl runtime config
-read_config_runtime "$cfg_dir/runtime.conf" || pause
-read_config_notify "$cfg_dir/notify.conf" || true
+read_runtime || pause
+read_backup || pause
 
 # Change dir to Minecraft server
-cd "$mcsl_dir/.."
+cd "$MCSL_DIR/.."
 log_info "changing working directory to the Minecraft server root" "print"
 
 # Start mcsl runtime process
-printf 'Minecraft Server Launcher Runtime Up\n' > "$mcslctl"
+create_files "$RUNTIME_STATE" "runtime.state" "MCSL runtime service up"
 log_info "starting mcsl runtime service" "print"
 
 # ============================[ runtime service ]============================= #
 
-while [[ "${runtime_status,,}" != "stop" ]]; do
+# Runtime state variables
+runtime_status="run"
+crash_count=0
+
+while [[ "$runtime_status" != "stop" ]]; do
     # Start timestamp
     sts=$(date +%s)
-    printf "%s\n" "$sts" > "$uptimectl"
+    create_files "$UPTIME_TIMESTAMP" "uptime.timestamp" "$sts"
 
     # Notify on discord telegram
-    runtime_notification "start"
+    #runtime_notification "start"
 
     # Remove crash control file
-    rm -f "$crashctl"
+    remove_files "$CRASH_STATE" "crash.state"
 
     # set return code for server start command
     rc=0
@@ -108,34 +103,34 @@ while [[ "${runtime_status,,}" != "stop" ]]; do
 
     # Calculate uptime timestamp
     uts=$(( ets - sts ))
-    log_info "Minecraft server uptime: $(format_duration "$uts")" "print"
-    rm -f "$uptimectl"
+    log_info "Minecraft server uptime: $(convert_seconds "$uts")" "print"
+    remove_files "$UPTIME_TIMESTAMP" "uptime.timestamp"
 
     # Stop requested
-    if [[ ! -f "$restartctl" ]]; then
-        runtime_notification "stop"
+    if [[ ! -f "$RESTART_CTL" ]]; then
+        #runtime_notification "stop"
         runtime_status="stop"; continue
     fi
 
     # Check crash handling setting
-    if [[ "${CRASH_HANDLE,,}" == "false" ]]; then
+    if [[ "$CRASH_HANDLE" == "false" ]]; then
         log_info "crash handling disabled. Server will not restart" "print"
-        runtime_notification "handle"
+        #runtime_notification "handle"
         runtime_status="stop"; continue
     fi
 
     # Create crash control file
-    printf 'Minecraft Server Launcher Runtime Crash Detected\n' > "$crashctl"
+    create_files "$CRASH_STATE" "crash.state" "MCSL runtime crash detected"
 
     # Server crashed
     (( crash_count++ )) || true
     log_warn "Minecraft server crashed. Restarting (attempt $crash_count)" "print"
-    runtime_notification "crash"
+    #runtime_notification "crash"
 
     # Check crash retry limit
     if (( MAX_RESTART >= 0 && crash_count >= MAX_RESTART )); then
         log_warn "crash limit reached (Max $MAX_RESTART). Server will not restart" "print"
-        runtime_notification "loop"
+        #runtime_notification "loop"
         runtime_status="stop"; continue
     fi
 
@@ -145,7 +140,7 @@ done
 
 # Stop mcsl runtime process
 log_info "shutting down mcsl runtime service" "print"
-rm -r "$mcslctl"
+remove_files "$RUNTIME_STATE" "runtime.state"
 
 # sleep to read logs before tmux close
 sleep 5

@@ -1,9 +1,4 @@
-# File: logger.sh
-# Description: Logger utility functions for bash scripts
-# Author: NoveIX
-# SPDX-License-Identifier: GPL-3.0-or-later
-
-# ===============================[ Function map ]=============================== #
+# file: src/lib/core/logger.sh
 
 # Map log levels to numeric values for comparison.
 loglevel_map() {
@@ -37,28 +32,28 @@ logcolor_map() {
 
 should_log() {
     # Check if the log level of the message is greater than or equal to the global minimum log level.
-    (( $(loglevel_map "$1") >= $(loglevel_map "$global_minlevel") ))
+    (( $(loglevel_map "$1") >= $(loglevel_map "$GLOBAL_MINLEVEL") ))
 }
 
 # Set global log file paths and logging settings.
 log_setting() {
-    global_logfile="${1:-}"
-    global_minlevel="${2:-info}"
-    global_print="${3:-noprint}"
-    local logmode="${4:-separate}"
+    GLOBAL_LOGFILE="${1:-}"
+    GLOBAL_MINLEVEL="${2:-info}"
+    GLOBAL_PRINT="${3:-noprint}"
+    local logfiles="${4:-separate}"
 
     # If global_logfile is set, create log file paths with date suffixes for organized logging.
-    if [[ -n "$global_logfile" ]]; then
+    if [[ -n "$GLOBAL_LOGFILE" ]]; then
         local logdate="$(date +%F)"
-        local logname="$(basename "$global_logfile")"
-        local logdir="$(dirname "$global_logfile")"
+        local logname="$(basename "$GLOBAL_LOGFILE")"
+        local logdir="$(dirname "$GLOBAL_LOGFILE")"
 
         # Set global log file paths with date suffixes for different log levels.
-        global_logfile="${logdir}/${logname}_${logdate}.log"
-        if [[ "${logmode,,}" == "separate" ]]; then
-            global_logfile_warn="${logdir}/${logname}_${logdate}_warn.log"
-            global_logfile_error="${logdir}/${logname}_${logdate}_error.log"
-            global_logfile_fatal="${logdir}/${logname}_${logdate}_fatal.log"
+        GLOBAL_LOGFILE="${logdir}/${logname}_${logdate}.log"
+        if [[ "${logfiles,,}" == "separate" ]]; then
+            GLOBAL_LOGFILE_WARN="${logdir}/${logname}_${logdate}_warn.log"
+            GLOBAL_LOGFILE_ERROR="${logdir}/${logname}_${logdate}_error.log"
+            GLOBAL_LOGFILE_FATAL="${logdir}/${logname}_${logdate}_fatal.log"
         fi
     fi
 }
@@ -67,9 +62,9 @@ log_setting() {
 log() {
     local level="$1"
     local message=$(printf %b "$2")
-    local print="${3:-$global_print}"
+    local print="${3:-$GLOBAL_PRINT}"
     local stream="${4:-out}"
-    local path="${5:-$global_logfile}"
+    local path="${5:-$GLOBAL_LOGFILE}"
 
     # log level check
     should_log "$level" || return 0
@@ -134,8 +129,8 @@ log_warn() {
     log "WARN" "${1:-}" "${2:-}" "${3:-}"
 
     # Print on warn file log
-    if [[ -n "${global_logfile_warn:-}" ]]; then
-        log "WARN" "${1:-}" "noprint" "none" "$global_logfile_warn"
+    if [[ -n "${GLOBAL_LOGFILE_WARN:-}" ]]; then
+        log "WARN" "${1:-}" "noprint" "none" "$GLOBAL_LOGFILE_WARN"
     fi
 }
 
@@ -144,8 +139,8 @@ log_error() {
     log "ERROR" "${1:-}" "${2:-}" "${3:-}"
 
     # Print on error file log
-    if [[ -n "${global_logfile_error:-}" ]]; then
-        log "ERROR" "${1:-}" "noprint" "none" "$global_logfile_error"
+    if [[ -n "${GLOBAL_LOGFILE_ERROR:-}" ]]; then
+        log "ERROR" "${1:-}" "noprint" "none" "$GLOBAL_LOGFILE_ERROR"
     fi
 }
 
@@ -154,8 +149,8 @@ log_fatal() {
     log "FATAL" "${1:-}" "${2:-}" "${3:-}"
 
     # Print on fatal file log
-    if [[ -n "${global_logfile_fatal:-}" ]]; then
-        log "FATAL" "${1:-}" "noprint" "none" "$global_logfile_fatal"
+    if [[ -n "${GLOBAL_LOGFILE_FATAL:-}" ]]; then
+        log "FATAL" "${1:-}" "noprint" "none" "$GLOBAL_LOGFILE_FATAL"
     fi
 }
 
@@ -165,5 +160,15 @@ log_done() {
 }
 
 print() {
-    printf '%b\n' "${1:-}"
+    local message="${1:-}"
+    local level="${2:-}"
+
+    printf '%b\n' "$message"
+
+    case "$level" in
+        info)  log_info "$message"  ;;
+        warn)  log_warn "$message"  ;;
+        error) log_error "$message" ;;
+        fatal) log_fatal "$message" ;;
+    esac
 }

@@ -5,4 +5,4 @@ cfg/
 logs/
 
 # Runtime dir
-src/runtime/
+.runtime/
