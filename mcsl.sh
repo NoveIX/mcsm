@@ -7,7 +7,7 @@
 
 set -euo pipefail
 
-# ===============================[ constants ]================================ #
+# ================================[ constant ]================================ #
 
 # Resolve the absolute path of the mcsl installation directory.
 readonly MCSL_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
@@ -38,7 +38,7 @@ readonly SESSION_NAME="$(get_session_name)"
 # Generate log setting
 log_setting "$LOGS_DIR/mcsl" "info" "print" "combined"
 
-# ==================================[ Main ]================================== #
+# ==================================[ main ]================================== #
 
 # log the command to be executed
 #log_debug "arguments: $0 $*"

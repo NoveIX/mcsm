@@ -2,41 +2,39 @@
 
 # ================================[ Command ]================================= #
 
-migrate_server() {
+sync_server() {
     local dest="$1"
     local host="$2"
     local user="$3"
     local key="$4"
     local port="$5"
-    local time="$6"
 
     # Check mandatory parameters
     require_param "dest" "$dest" "migrate"
 
     [[ "$dest" == *:* ]] && host="${dest%%:*}"
     if [[ -z "$host" ]]; then
-        migrate_local "$dest" "$time"
+        sync_local "$dest" "$time"
     else
-        migrate_remote "$@"
+        sync_remote "$@"
     fi
 }
 
-# Move server root - LOCAL MIGRATION
+# Sync server root - LOCAL SYNC
 
-migrate_local() {
+sync_local() {
     local dest="$1"
     local time="$2"
     local red="\033[31m"
+    local yellow="\033[33m"
     local green="\033[32m"
     local blue="\033[94m"
     local reset="\033[0m"
     local dot="${red}●${reset}"
-    local answer
 
     # Import required module
     import "lib.core.command"
     import "lib.tmux.exists.session"
-    import "commands.stop"
 
     # Check required dependencies
     check_command "tmux" "fatal"
@@ -57,25 +55,25 @@ migrate_local() {
         ;;
     esac
 
-    # Destination info
-    print; print "local move: $dest/"; print
+    # Mirror information
+    print
+    print "source:      $SERVER_ROOT/" "info"
+    print "destination: $dest/" "info"
+    print "mode:        mirror (--delete enabled)" "info"
+    print
+    print "${yellow}WARNING${reset}: files existing only in destination may be removed." "warn"
+    print
 
     # Check if session exist
     exists_tmux_session "$SESSION_NAME" && dot="${green}●${reset}"
 
     # Check if user wants to continue
     printf '%b' "$dot "
-    read -r -p "Server $SESSION_NAME will be stopped if running. Proceed with migration? [y/N]: " answer
+    read -r -p "Create mirror copy of the server $SESSION_NAME. Proceed with sync? [y/N]: " answer
     if [[ "${answer,,}" != "y" ]]; then
-        print "migration aborted by user" "info"
+        print "synchronization aborted by user" "info"
         return 0
     fi
-
-    # Stop server
-    stop_server "$SESSION_NAME" "$time" "shutdown" "true" "false"
-
-    # OVERRIDE log setting to print only in console.
-    log_setting
 
     # Ensure directory
     if ! mkdir -p "$dest"; then
@@ -83,50 +81,27 @@ migrate_local() {
         return 1
     fi
 
-    # Convert to absolute path
-    dest="$(realpath "$dest")"
-
-    # Check empty dir - NOTE: find+grep returns 0 if NOT empty, 1 if empty (inverted logic)
-    if find "$dest" -mindepth 1 -print -quit | grep -q .; then
-        log_error "destination directory is not empty: $dest" "print"
-        return 1
-    fi
-
-    # Move server
-    print; print "migration in progress"
-    if ! rsync -ah --info=progress2 "$SERVER_ROOT/" "$dest/"; then
+    # Sync server
+    print; print "Sync in progress" "info"
+    if ! rsync -ah --delete --info=progress2 "$SERVER_ROOT/" "$dest/"; then
         log_error "rsync failed: $SERVER_ROOT/ -> $dest/" "print"
         return 1
     fi
 
-    # Change dir to prevent this error:
-    # shell-init: error retrieving current directory: getcwd: cannot access parent directories: No such file or directory
-    cd "$HOME"
-
-    # Remove server root
-    if ! rm -rf "$SERVER_ROOT"; then
-        log_error "failed to remove server root: $SERVER_ROOT" "print"
-        return 1
-    fi
-
-    print "migration completed"; print
-
-    # Start server after migration (default: yes)
-    printf '%b' "${blue}●${reset} "
-    read -r -p "Restart server now? [Y/n]: " answer
-    [[ "${answer,,}" != "n" ]] && bash "$dest/mcsl/$MCSL_NAME" start
+    # Log migration completion
+    print "Sync completed" "info"; print
 }
 
-# Move server root - REMOTE MIGRATION
+# Sync server root - REMOTE SYNC
 
-migrate_remote() {
+sync_remote() {
     local dest="$1"
     local host="$2"
     local user="$3"
     local key="$4"
     local port="$5"
-    local time="$6"
     local red="\033[31m"
+    local yellow="\033[33m"
     local green="\033[32m"
     local blue="\033[94m"
     local reset="\033[0m"
@@ -138,7 +113,6 @@ migrate_remote() {
     import "lib.remote.ssh.test"
     import "lib.remote.ssh.command"
     import "lib.tmux.exists.session"
-    import "commands.stop"
 
     # Check required dependencies
     check_command "tmux" "fatal"
@@ -195,36 +169,30 @@ migrate_remote() {
     sshcheck_command "tmux" "$host" "fatal" "$user" "$key" "$port"
     sshcheck_command "java" "$host" "warn" "$user" "$key" "$port" || true
 
-    # Destination info
+    # Mirror information
     local login="${user:+$user@}$host"
-    print; print "remote move: $login:$dest/"; print
+    print
+    print "source:      $SERVER_ROOT/" "info"
+    print "destination: $login:$dest/" "info"
+    print "mode:        mirror (--delete enabled)" "info"
+    print
+    print "${yellow}WARNING${reset}: files existing only in destination may be removed." "warn"
+    print
 
     # Check if session exist
     exists_tmux_session "$SESSION_NAME" && dot="${green}●${reset}"
 
     # Check if user wants to continue
-    printf '%b ' "$dot"
-    read -r -p "Server $SESSION_NAME will be stopped if running. Proceed with migration? [y/N]: " answer
+    printf '%b' "$dot "
+    read -r -p "Create mirror copy of the server $SESSION_NAME. Proceed with sync? [y/N]: " answer
     if [[ "${answer,,}" != "y" ]]; then
-        print "migration aborted by user" "info"
+        print "synchronization aborted by user" "info"
         return 0
     fi
-
-    # Stop server
-    stop_server "$SESSION_NAME" "$time" "shutdown" "true" "false"
-
-    # OVERRIDE log setting to print only in console.
-    log_setting
 
     # Ensure directory
     if ! execute_ssh "$host" "$user" "$key" "$port" mkdir -p "$dest"; then
         log_error "failed to create remote directory: $login:$dest/" "print"
-        return 1
-    fi
-
-    # Check empty dir - NOTE: find+grep returns 0 if NOT empty, 1 if empty (inverted logic)
-    if ! execute_ssh "$host" "$user" "$key" "$port" find "$dest/" -mindepth 1 -print -quit | grep -q .; then
-        log_error "destination directory is not empty: $login:$dest/" "print"
         return 1
     fi
 
@@ -240,27 +208,13 @@ migrate_remote() {
     [[ -n "$key" ]] && ssh_cmd+=(-i "$key")
     [[ -n "$port" ]] && ssh_cmd+=(-p "$port")
 
-    # Move server
-    print; print "migration in progress"
-    if ! rsync -azh --info=progress2 -e "${ssh_cmd[*]}" "$SERVER_ROOT/" "$login:$dest/"; then
+    # Sync server
+    print; print "Sync in progress" "info"
+    if ! rsync -azh --delete --info=progress2 -e "${ssh_cmd[*]}" "$SERVER_ROOT/" "$login:$dest/"; then
         log_error "rsync failed: $SERVER_ROOT/ -> $login:$dest/" "print"
         return 1
     fi
 
-    # Change dir to prevent this error:
-    #shell-init: error retrieving current directory: getcwd: cannot access parent directories: No such file or directory
-    cd $HOME
-
-    # Remove server root
-    if ! rm -rf "$SERVER_ROOT"; then
-        log_error "failed to remove server root: $SERVER_ROOT" "print"
-        return 1
-    fi
-
-    print "migration completed"; print
-
-    # Start server after migration (default: yes)
-    printf '%b' "${blue}●${reset} "
-    read -r -p "Start migrated server now? [Y/n]: " answer
-    [[ "${answer,,}" != "n" ]] && execute_ssh "$host" "$user" "$key" "$port" bash "$dest/mcsl/$MCSL_NAME" start
+    # Log migration completion
+    print "Sync completed" "info"; print
 }
