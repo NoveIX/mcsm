@@ -11,11 +11,11 @@ stop_server() {
 
     # =================================[ invoke ]================================= #
 
-    if [[ "${all,,}" == "true" || "$session" != "$SESSION_NAME" ]]; then
+    if [[ "$all" == "true" || "$session" != "$SESSION_NAME" ]]; then
         import "lib.remote.invoke"
 
         # Call command in the specified session or all sessions
-        if [[ "${all,,}" == "true" ]]; then
+        if [[ "$all" == "true" ]]; then
             invoke_sessions stop --time "$time"
         else
             invoke_session "$session"  stop --time "$time"
@@ -27,12 +27,14 @@ stop_server() {
     # ===============================[ execution ]================================ #
 
     # Import required module
+    log_info "import required modules"
     import "lib.core.command"
     import "lib.filesystem.remove"
     import "lib.tmux.send"
     import "lib.tmux.wait"
 
     # Check required dependencies
+    log_info "check required dependencies"
     check_command "tmux" "fatal"
 
     if exists_tmux_session "$session"; then
@@ -59,7 +61,7 @@ stop_server() {
         print "stopping server $session" "info"
 
         # Wait for the tmux session is closed before returning
-        [[ "${wait,,}" == "true" ]] && wait_tmux "$session"
+        [[ "$wait" == "true" ]] && wait_tmux "$session"
 
         return 0
     fi

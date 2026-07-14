@@ -74,7 +74,7 @@ while [[ "$runtime_status" != "stop" ]]; do
     sts=$(date +%s)
     create_files "$UPTIME_TIMESTAMP" "uptime.timestamp" "$sts"
 
-    # Notify on discord telegram
+    # Event on discord telegram
     #runtime_notification "start"
 
     # Remove crash control file

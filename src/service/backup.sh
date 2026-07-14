@@ -104,7 +104,7 @@ sleep 30
 log_info "backup service use this current settings (delay: $BACKUP_DELAY m, format: $BACKUP_FORMAT)" "print"
 
 # Backup loop
-while [[ "${runtime_status,,}" != "stop" ]]; do
+while [[ "$runtime_status" != "stop" ]]; do
 
     # Ensure directory
     if [[ ! -d "$backup_dir" ]] && ! mkdir -p "$backup_dir"; then

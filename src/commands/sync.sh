@@ -14,8 +14,10 @@ sync_server() {
 
     [[ "$dest" == *:* ]] && host="${dest%%:*}"
     if [[ -z "$host" ]]; then
+        log_info "missing host parameter, performing local sync"
         sync_local "$dest" "$time"
     else
+        log_info "host parameter detected, performing remote sync"
         sync_remote "$@"
     fi
 }
@@ -31,26 +33,27 @@ sync_local() {
     local blue="\033[94m"
     local reset="\033[0m"
     local dot="${red}●${reset}"
+    local answer rc
 
     # Import required module
+    log_info "import required modules"
     import "lib.core.command"
     import "lib.tmux.exists.session"
 
     # Check required dependencies
+    log_info "check required dependencies"
     check_command "tmux" "fatal"
     check_command "rsync"
 
     # Trim trailing slash from destination path
-    if [[ "$dest" != "/" ]]; then
-        while [[ "$dest" == */ ]]; do
-            dest="${dest%/}"
-        done
-    fi
-
-    # Convert to absolute path
-    dest="$(realpath -m "$dest")"
+    log_info "trim trailing slash from destination path"
+    while [[ "$dest" == */ ]]; do
+        dest="${dest%/}"
+    done
 
     # Check for unsafe destination paths
+    log_info "check for unsafe destination paths"
+    [[ -z "$dest" ]] && dest="/"
     case "$dest" in
         /|/bin|/boot|/dev|/etc|/home|/lib|/lib32|/lib64|/media|/mnt|/opt|/proc|/root|/run|/sbin|/srv|/sys|/tmp|/usr|/var)
             log_error "destination path is protected: $dest" "print"
@@ -58,7 +61,11 @@ sync_local() {
         ;;
     esac
 
+    # Convert to absolute path
+    dest="$(realpath -m "$dest")"
+
     # Destination cannot be inside server root
+    log_info "check if destination is inside server root"
     if [[ "$dest" == "$SERVER_ROOT" || "$dest" == "$SERVER_ROOT"/* ]]; then
         log_error "destination path is inside server root: $dest" "print"
         return 1
@@ -92,14 +99,17 @@ sync_local() {
     fi
 
     # Sync server
-    print; print "Sync in progress" "info"
-    if ! rsync -ah --delete --info=progress2 "$SERVER_ROOT/" "$dest/"; then
-        log_error "rsync failed: $SERVER_ROOT/ -> $dest/" "print"
+    print; print "synchronization in progress"
+    rsync -ah --delete --info=progress2 "$SERVER_ROOT/" "$dest/" || rc=$?
+    rc=$?
+
+    if ! (( rc == 0 )); then
+        log_error "rsync failed (code $rc): $SERVER_ROOT/ -> $dest/" "print"
         return 1
     fi
 
     # Log migration completion
-    print "Sync completed" "info"; print
+    print "synchronization completed" "info"; print
 }
 
 # Sync server root - REMOTE SYNC
@@ -116,38 +126,44 @@ sync_remote() {
     local blue="\033[94m"
     local reset="\033[0m"
     local dot="${red}●${reset}"
-    local answer
+    local answer rc
 
     # Import required module
+    log_info "import required modules"
     import "lib.core.command"
     import "lib.remote.ssh.test"
     import "lib.remote.ssh.command"
     import "lib.tmux.exists.session"
 
     # Check required dependencies
+    log_info "check required dependencies"
     check_command "tmux" "fatal"
     check_command "ssh"
     check_command "rsync"
 
     # separate dest and host if dest contains ':'
     if [[ "$dest" == *:* ]]; then
+        log_info "separate destination and host from dest parameter"
         host="${dest%%:*}"
         dest="${dest#*:}"
     fi
 
     # separate user and host if host contains '@'
     if [[ "$host" == *@* ]]; then
+        log_info "separate host and user from host parameter"
         user="${host%%@*}"
         host="${host#*@}"
     fi
 
     # separate user and key if user contains '#'
     if [[ "$user" == *#* ]]; then
+        log_info "separate user and key from user parameter"
         key="${user%%#*}"
         user="${user#*#}"
     fi
 
     # Trim trailing slash from destination path
+    log_info "trim trailing slash from destination path"
     if [[ "$dest" != "/" ]]; then
         while [[ "$dest" == */ ]]; do
             dest="${dest%/}"
@@ -155,6 +171,7 @@ sync_remote() {
     fi
 
     # Check for unsafe destination paths
+    log_info "check for unsafe destination paths"
     case "$dest" in
         /|/bin|/boot|/dev|/etc|/home|/lib|/lib32|/lib64|/media|/mnt|/opt|/proc|/root|/run|/sbin|/srv|/sys|/tmp|/usr|/var)
             log_error "destination path is protected: $dest" "print"
@@ -163,16 +180,14 @@ sync_remote() {
     esac
 
     # Check SSH connectivity
-    log_info "testing SSH connection to $host"
-
+    log_info "test SSH connection to $host"
     if ! test_ssh "$host" "$user" "$key" "$port"; then
         log_error "SSH connection test failed: $host" "print"
         return 1
     fi
 
-    log_info "SSH connection test successful: $host"
-
     # Check required dependencies on remote host
+    log_info "check required dependencies on remote host: $host"
     sshcheck_command "ssh" "$host" "error" "$user" "$key" "$port"
     sshcheck_command "rsync" "$host" "error" "$user" "$key" "$port"
     sshcheck_command "bash" "$host" "fatal" "$user" "$key" "$port"
@@ -220,12 +235,15 @@ sync_remote() {
     [[ -n "$port" ]] && ssh_cmd+=(-p "$port")
 
     # Sync server
-    print; print "Sync in progress" "info"
-    if ! rsync -azh --delete --info=progress2 -e "${ssh_cmd[*]}" "$SERVER_ROOT/" "$login:$dest/"; then
+    print; print "synchronization in progress" "info"
+    rsync -azh --delete --info=progress2 -e "${ssh_cmd[*]}" "$SERVER_ROOT/" "$login:$dest/" || rc=$?
+    rc=$?
+
+    if ! (( rc == 0 )); then
         log_error "rsync failed: $SERVER_ROOT/ -> $login:$dest/" "print"
         return 1
     fi
 
     # Log migration completion
-    print "Sync completed" "info"; print
+    print "synchronization completed" "info"; print
 }

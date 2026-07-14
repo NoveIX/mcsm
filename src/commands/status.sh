@@ -42,6 +42,7 @@ status_server() {
 
     # If localhost -> read port from server.properties
     if [[ "$host" == "127.0.0.1" || "$host" == "localhost" ]]; then
+        log_info "import required modules"
         import "lib.tmux.exists.session"
         import "lib.filesystem.get"
         import "lib.util.convert.second"

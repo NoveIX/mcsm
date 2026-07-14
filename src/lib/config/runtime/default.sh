@@ -2,7 +2,7 @@
 
 default_runtime() {
     cat <<"EOF" > "$1"
-# Minecraft Server Launcher Runtime Configuration
+# MCSL Runtime Configuration
 
 # Command used to start the Minecraft server.
 # The command is executed from the server root directory.

@@ -2,21 +2,23 @@
 
 default_notify() {
     cat <<"EOF" > "$1"
-# Minecraft Server Launcher Event Configuration
+# MCSL Notify Configuration
 
-# Enable or disable notifications for server events.
-EnableEvent=false
-
-# Name of the server shown in notifications
+# Server name displayed in notifications.
 ServerName=My Minecraft Server
 
-# Discord webhook URL for server events
-DiscordWebHook=https://discord.com/api/webhooks/HooksId
+# Runtime notifications.
+RuntimeNotifyEnabled=false
+RuntimeDiscordWebHook=
+RuntimeTelegramToken=
+RuntimeTelegramChatID=
 
-# Telegram bot token
-TelegramToken=TokenId
-
-# Telegram chat ID (can be negative for groups)
-TelegramChatID=ChatId
+# Backup notifications.
+# By default, uses the corresponding runtime notification settings.
+# Leave DiscordWebHook, TelegramToken, or TelegramChatID empty to inherit them.
+BackupNotifyEvent=false
+BackupDiscordWebHook=
+BackupTelegramToken=
+BackupTelegramChatID=
 EOF
 }

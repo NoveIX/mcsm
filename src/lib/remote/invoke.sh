@@ -7,7 +7,7 @@ invoke_mcsl() {
     shift 2
 
     # status command is special, it should not print the log message
-    [[ "${cmd,,}" == "status" ]] && print="noprint"
+    [[ "$cmd" == "status" ]] && print="noprint"
 
     # mcsl command path for the specified session
     local mcslsh="$SERVER_CONTAINER/$session/mcsl/$MCSL_NAME"
@@ -31,6 +31,7 @@ invoke_session() {
     local command="$2"
     shift 2
 
+    log_info "invoke $command command in session: $session"
     invoke_mcsl "$session" "$command" "$@"
 }
 
@@ -38,6 +39,7 @@ invoke_sessions() {
     local command="$1"
     shift
 
+    log_info "invoke $command command in all sessions"
     for dir in "$SERVER_CONTAINER"/*/; do
         [[ -d "$dir" ]] || continue
 

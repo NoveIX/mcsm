@@ -10,7 +10,7 @@ restart_server() {
 
     # =================================[ invoke ]================================= #
 
-    if [[ "${all,,}" == "true" || "$session" != "$SESSION_NAME" ]]; then
+    if [[ "$all" == "true" || "$session" != "$SESSION_NAME" ]]; then
         import "lib.remote.invoke"
 
         local -a args=()
@@ -29,12 +29,14 @@ restart_server() {
     # ===============================[ execution ]================================ #
 
     # Import required module
+    log_info "import required modules"
     import "lib.core.command"
     import "lib.tmux.exists.session"
     import "commands.start"
     import "commands.stop"
 
     # Check required dependencies
+    log_info "check required dependencies"
     check_command "tmux" "fatal"
 
     # Restart server

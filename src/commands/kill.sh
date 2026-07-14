@@ -25,10 +25,12 @@ kill_server() {
     fi
 
     # Import required module
+    log_info "import required modules"
     import "lib.core.command"
     import "lib.tmux.kill"
 
     # Check required dependencies
+    log_info "check required dependencies"
     check_command "tmux" "fatal"
 
     # Check if the tmux session exists.

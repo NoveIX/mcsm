@@ -24,10 +24,12 @@ selfupdate() {
     # ===============================[ execution ]================================ #
 
     # Import required module
+    log_info "import required modules"
     import "lib.core.command"
     import "commands.version"
 
     # Check required dependencies
+    log_info "check required dependencies"
     check_command "git"
 
     # Get mcsl current version
@@ -50,15 +52,14 @@ selfupdate() {
 
             # Check different version
             if [[ "$old_version" != "$new_version" ]]; then
-                print "mcsl update completed" "info"; print
-                print_version
+                print "mcsl update completed" "info"
             else
                 print "mcsl is already running the latest version" "info"
             fi
         fi
     else
         log_error "mcsl update failed" "print"
-        printf '%s\n' "$output"
+        print "$output"
     fi
 
     chmod u+rwx,g+rw,o+r "$MCSL_DIR/$MCSL_NAME"

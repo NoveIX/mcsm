@@ -5,12 +5,15 @@ check_command() {
     local mode="${2:-error}"
 
     # Check if command exists
-    command -v "$cmd" >/dev/null 2>&1 && return 0
+    if command -v "$cmd" >/dev/null 2>&1; then
+        log_info "command found: $cmd"
+        return 0
+    fi
 
     # Log missing command based on priority
     local msg="command not found: $cmd"
 
-    case "${mode,,}" in
+    case "$mode" in
         warn)  log_warn  "$msg" "print" ;;
         error) log_error "$msg" "print" ;;
         fatal) log_fatal "$msg" "print" ;;

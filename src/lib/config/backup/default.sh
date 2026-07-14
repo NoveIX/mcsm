@@ -2,21 +2,29 @@
 
 default_backup() {
     cat <<"EOF" > "$1"
-# Minecraft Server Launcher Backup Configuration
+# MCSL Backup Configuration
 
-# Enable or disable automatic backups for the Minecraft server.
+# Enable or disable automatic Minecraft server backups.
 EnableBackup=false
 
-# Backup archive format
+# Backup archive format.
 # Supported: zip, tar.gz, tar.xz, tar.zst
 # Required tools:
 #   zip:     zip command-line utility (included in most systems)
-#   tar.gz:  tar with gzip support (requires gzip installed)
-#   tar.xz:  tar with xz support   (requires xz-utils installed)
-#   tar.zst: tar with zstd support (requires zstd installed)
+#   tar.gz:  tar with gzip support (requires gzip)
+#   tar.xz:  tar with xz support (requires xz-utils)
+#   tar.zst: tar with zstd support (requires zstd)
+# Default: zip
 BackupFormat=zip
 
-# Backup delay in minutes.
+# Backup interval in minutes.
+# Default: 30
 BackupDelay=30
+
+# Number of days to retain backup files.
+# Backups older than this value will be deleted automatically.
+# Set to -1 to keep backups indefinitely.
+# Default: 7
+CleanDays=7
 EOF
 }

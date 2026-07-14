@@ -34,21 +34,22 @@ start_server() {
         mkdir -p "$CFG_DIR"
 
         # Generate default configuration file
-        print "generating default configuration" "info"
+        print "generating default configuration"
         default_runtime "$RUNTIME_CONF"
         default_backup "$BACKUP_CONF"
-        default_notify "$NOTIFY_CONF"
+        default_event "$NOTIFY_CONF"
 
         # Log message to inform the user about the generated configuration file
-        print "edit $RUNTIME_CONF to configure mcsl runtime" "info"
-        print "edit $BACKUP_CONF to configure mcsl backup" "info"
-        print "edit $NOTIFY_CONF to configure mcsl notification" "info"
+        print "edit $RUNTIME_CONF to configure mcsl runtime"
+        print "edit $BACKUP_CONF to configure mcsl backup"
+        print "edit $NOTIFY_CONF to configure mcsl notify"
         return 0
     fi
 
     # ===============================[ execution ]================================ #
 
     # Import required module
+    log_info "import required modules"
     import "lib.core.command"
     import "lib.config.runtime.read"
     import "lib.config.backup.read"
@@ -57,6 +58,7 @@ start_server() {
     import "lib.tmux.attach"
 
     # Check required dependencies
+    log_info "check required dependencies"
     check_command "tmux" "fatal"
     check_command "java" "warn" || true
 
@@ -73,14 +75,16 @@ start_server() {
         # Create a new detached tmux session that runs the mcsl script
         if tmux new-session -d -s "$session" -n "runtime" \
         bash "$RUNTIME_SERVICE" "$MCSL_DIR" "$LOG_FILES"; then
-            print "starting server $session" "info"
+            log_info "tmux session does not exist, create new session: $session"
+            print "starting server $session"
         fi
 
         # Create a new detached tmux window for backup operations
         if [[ "$ENABLE_BACKUP" == "true" ]]; then
             if tmux new-window -t "$session" -n "backup" \
             bash "$BACKUP_SERVICE" "$MCSL_DIR" "$session" "$LOG_FILES"; then
-                print "starting backup scheduler for server $session" "info"
+                log_info "tmux window for backup does not exist, create new window: backup"
+                print "starting backup scheduler for server $session"
             fi
         fi
 

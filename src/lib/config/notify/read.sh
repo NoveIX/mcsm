@@ -3,7 +3,7 @@
 import "lib.config.notify.default"
 import "lib.util.trim"
 
-read_event() {
+read_notify() {
     local file="$1"
     local key value
     local valid=true

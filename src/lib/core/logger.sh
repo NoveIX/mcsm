@@ -50,7 +50,7 @@ log_setting() {
 
         # Set global log file paths with date suffixes for different log levels.
         GLOBAL_LOGFILE="${logdir}/${logname}_${logdate}.log"
-        if [[ "${logfiles,,}" == "separate" ]]; then
+        if [[ "$logfiles" == "separate" ]]; then
             GLOBAL_LOGFILE_WARN="${logdir}/${logname}_${logdate}_warn.log"
             GLOBAL_LOGFILE_ERROR="${logdir}/${logname}_${logdate}_error.log"
             GLOBAL_LOGFILE_FATAL="${logdir}/${logname}_${logdate}_fatal.log"
@@ -60,7 +60,7 @@ log_setting() {
 
 # main log function that handles log level checking, terminal output, and file output based on the provided parameters.
 log() {
-    local level="$1"
+    local level="${1,,}"
     local message=$(printf %b "$2")
     local print="${3:-$GLOBAL_PRINT}"
     local stream="${4:-out}"
@@ -73,19 +73,19 @@ log() {
     color="$(logcolor_map "$level")"
 
     # terminal output
-    if [[ ${print,,} == "print" ]]; then
-        case "${stream,,}" in
+    if [[ "$print" == "print" ]]; then
+        case "$stream" in
             out)
-                printf '%b%s%b: %s\n' "$color" "${level,,}" "$reset" "$message"
+                printf '%b%s%b: %s\n' "$color" "$level" "$reset" "$message"
             ;;
 
             err)
-                printf '%b%s%b: %s\n' "$color" "${level,,}" "$reset" "$message" >&2
+                printf '%b%s%b: %s\n' "$color" "$level" "$reset" "$message" >&2
             ;;
 
             both)
-                printf '%b%s%b: %s\n' "$color" "${level,,}" "$reset" "$message"
-                printf '%b%s%b: %s\n' "$color" "${level,,}" "$reset" "$message" >&2
+                printf '%b%s%b: %s\n' "$color" "$level" "$reset" "$message"
+                printf '%b%s%b: %s\n' "$color" "$level" "$reset" "$message" >&2
             ;;
 
             *)
@@ -102,7 +102,7 @@ log() {
         # Write log on file
         printf '%s %s %s\n' \
         "$(date "+%Y-%m-%d %H:%M:%S")" \
-        "${level,,}" \
+        "$level" \
         "$message" >> "$path"
     fi
 }

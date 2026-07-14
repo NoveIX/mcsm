@@ -12,6 +12,7 @@ set -euo pipefail
 # Resolve the absolute path of the mcsl installation directory.
 readonly MCSL_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 readonly MCSL_NAME="$(basename -- "${BASH_SOURCE[0]}")"
+#readonly MCSL_PATH="$MCSL_DIR/$MCSL_NAME"
 
 readonly IMPORTSH="$MCSL_DIR/src/lib/core/import.sh"
 
@@ -26,7 +27,7 @@ fi
 # Load import module
 source "$IMPORTSH"
 
-# Load required module
+# Import required module
 import "lib.core.ctx"
 import "lib.core.logger"
 import "lib.tmux.name"
@@ -40,9 +41,12 @@ log_setting "$LOGS_DIR/mcsl" "info" "noprint" "combined"
 
 # ==================================[ main ]================================== #
 
+# Create target file for mcsl.sh in the server root directory
+#printf "%s\n" "$MCSL_PATH" > "$SERVER_ROOT/.mcsl"
+
 # log the command to be executed
 #log_debug "arguments: $0 $*"
-log_info "execute command: $1"
+log_info "execute command: ${1:-}"
 
 # Execute main fuction
 main $@

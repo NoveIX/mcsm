@@ -4,7 +4,7 @@ import "lib.filesystem.eula.default"
 
 read_eula() {
     local file="$1"
-    local value
+    local value answer
 
     # Check if eula file exists
     if [[ ! -f "$file" ]]; then
@@ -16,14 +16,13 @@ read_eula() {
     value=$(grep -E '^[[:space:]]*eula[[:space:]]*=' "$file" \
         | tail -n 1 \
         | cut -d'=' -f2 \
-        | tr -d '[:space:]')
+    | tr -d '[:space:]')
 
     # Default if missing
     [[ -z "$value" ]] && value="false"
 
     # Check if the eula is accepted
     if [[ "$value" != "true" ]]; then
-        local answer
         read -r -p "The EULA is not accepted. Accept it now? [y/N]: " answer
 
         if [[ "${answer,,}" == "y" ]]; then
@@ -37,16 +36,17 @@ read_eula() {
                 printf '%s\n' "eula=true" >> "$file"
             fi
 
-            # Log acceptance and return success
+            # Log EULA acceptance and return success
             log_info "EULA accepted by user"
             return 0
         fi
 
-        # Log rejection and return failure
+        # Log EULA rejection and return failure
         log_warn "EULA not accepted by user. Server will not start" "print"
         return 1
     fi
 
+    # Log EULA is already accepted and return success
     log_info "EULA already accepted"
     return 0
 }
