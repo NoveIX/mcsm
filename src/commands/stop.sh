@@ -55,9 +55,8 @@ stop_server() {
         fi
 
         # Send the stop command to the tmux session to initiate server shutdown.
-        log_info "stopping server $session at $(date "+%F %T")"
-        print "stopping server $session"
         send_tmux "$session" "0" "stop"
+        print "stopping server $session" "info"
 
         # Wait for the tmux session is closed before returning
         [[ "${wait,,}" == "true" ]] && wait_tmux "$session"
@@ -65,5 +64,5 @@ stop_server() {
         return 0
     fi
 
-    log_info "server $session is not running" "print"
+    print "server $session is not running" "info"
 }

@@ -80,7 +80,7 @@ start_server() {
         if [[ "$ENABLE_BACKUP" == "true" ]]; then
             if tmux new-window -t "$session" -n "backup" \
             bash "$BACKUP_SERVICE" "$MCSL_DIR" "$session" "$LOG_FILES"; then
-                log_info "starting backup scheduler for server $session"
+                print "starting backup scheduler for server $session" "info"
             fi
         fi
 
@@ -89,6 +89,6 @@ start_server() {
         return 0
     fi
 
-    log_info "server $session is running"
+    print "server $session is running" "info"
     return 0
 }
