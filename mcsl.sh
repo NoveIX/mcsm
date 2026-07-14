@@ -36,7 +36,7 @@ import "main"
 readonly SESSION_NAME="$(get_session_name)"
 
 # Generate log setting
-log_setting "$LOGS_DIR/mcsl" "info" "print" "combined"
+log_setting "$LOGS_DIR/mcsl" "info" "noprint" "combined"
 
 # ==================================[ main ]================================== #
 

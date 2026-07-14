@@ -27,6 +27,7 @@ migrate_local() {
     local dest="$1"
     local time="$2"
     local red="\033[31m"
+    local yellow="\033[33m"
     local green="\033[32m"
     local blue="\033[94m"
     local reset="\033[0m"
@@ -49,16 +50,32 @@ migrate_local() {
         done
     fi
 
+    # Convert to absolute path
+    dest="$(realpath -m "$dest")"
+
     # Check for unsafe destination paths
     case "$dest" in
         /|/bin|/boot|/dev|/etc|/home|/lib|/lib32|/lib64|/media|/mnt|/opt|/proc|/root|/run|/sbin|/srv|/sys|/tmp|/usr|/var)
-            log_error "unsafe destination path: $dest"
+            log_error "destination path is protected: $dest" "print"
             return 1
         ;;
     esac
 
-    # Destination info
-    print; print "local move: $dest/"; print
+    # Destination cannot be inside server root
+    if [[ "$dest" == "$SERVER_ROOT" || "$dest" == "$SERVER_ROOT"/* ]]; then
+        log_error "destination path is inside server root: $dest" "print"
+        return 1
+    fi
+
+    # Migrate information
+    print
+    print "source:      $SERVER_ROOT/"
+    print "destination: $dest/"
+    print "mode:        move"
+    print
+    print "${yellow}WARNING${reset}: source directory will be removed after migration." "warn"
+    print
+    log_info "local move: $SERVER_ROOT/ -> $dest/"
 
     # Check if session exist
     exists_tmux_session "$SESSION_NAME" && dot="${green}●${reset}"
@@ -82,9 +99,6 @@ migrate_local() {
         log_error "failed to create directory: $dest" "print"
         return 1
     fi
-
-    # Convert to absolute path
-    dest="$(realpath "$dest")"
 
     # Check empty dir - NOTE: find+grep returns 0 if NOT empty, 1 if empty (inverted logic)
     if find "$dest" -mindepth 1 -print -quit | grep -q .; then
@@ -127,6 +141,7 @@ migrate_remote() {
     local port="$5"
     local time="$6"
     local red="\033[31m"
+    local yellow="\033[33m"
     local green="\033[32m"
     local blue="\033[94m"
     local reset="\033[0m"
@@ -173,7 +188,7 @@ migrate_remote() {
     # Check for unsafe destination paths
     case "$dest" in
         /|/bin|/boot|/dev|/etc|/home|/lib|/lib32|/lib64|/media|/mnt|/opt|/proc|/root|/run|/sbin|/srv|/sys|/tmp|/usr|/var)
-            log_error "unsafe destination path: $dest"
+            log_error "destination path is protected: $dest" "print"
             return 1
         ;;
     esac
@@ -195,9 +210,16 @@ migrate_remote() {
     sshcheck_command "tmux" "$host" "fatal" "$user" "$key" "$port"
     sshcheck_command "java" "$host" "warn" "$user" "$key" "$port" || true
 
-    # Destination info
+    # Migrate information
     local login="${user:+$user@}$host"
-    print; print "remote move: $login:$dest/"; print
+    print
+    print "source:      $SERVER_ROOT/"
+    print "destination: $login:$dest/"
+    print "mode:        move"
+    print
+    print "${yellow}WARNING${reset}: source directory will be removed after migration." "warn"
+    print
+    log_info "local move: $SERVER_ROOT/ -> $login:$dest/"
 
     # Check if session exist
     exists_tmux_session "$SESSION_NAME" && dot="${green}●${reset}"

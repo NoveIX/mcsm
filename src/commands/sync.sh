@@ -47,22 +47,32 @@ sync_local() {
         done
     fi
 
+    # Convert to absolute path
+    dest="$(realpath -m "$dest")"
+
     # Check for unsafe destination paths
     case "$dest" in
         /|/bin|/boot|/dev|/etc|/home|/lib|/lib32|/lib64|/media|/mnt|/opt|/proc|/root|/run|/sbin|/srv|/sys|/tmp|/usr|/var)
-            log_error "unsafe destination path: $dest"
+            log_error "destination path is protected: $dest" "print"
             return 1
         ;;
     esac
 
-    # Mirror information
+    # Destination cannot be inside server root
+    if [[ "$dest" == "$SERVER_ROOT" || "$dest" == "$SERVER_ROOT"/* ]]; then
+        log_error "destination path is inside server root: $dest" "print"
+        return 1
+    fi
+
+    # Sync information
     print
-    print "source:      $SERVER_ROOT/" "info"
-    print "destination: $dest/" "info"
-    print "mode:        mirror (--delete enabled)" "info"
+    print "source:      $SERVER_ROOT/"
+    print "destination: $dest/"
+    print "mode:        mirror"
     print
-    print "${yellow}WARNING${reset}: files existing only in destination may be removed." "warn"
+    print "${yellow}WARNING${reset}: destination files will be deleted to match the source."
     print
+    log_info "local sync: $SERVER_ROOT/ -> $dest/"
 
     # Check if session exist
     exists_tmux_session "$SESSION_NAME" && dot="${green}●${reset}"
@@ -147,7 +157,7 @@ sync_remote() {
     # Check for unsafe destination paths
     case "$dest" in
         /|/bin|/boot|/dev|/etc|/home|/lib|/lib32|/lib64|/media|/mnt|/opt|/proc|/root|/run|/sbin|/srv|/sys|/tmp|/usr|/var)
-            log_error "unsafe destination path: $dest"
+            log_error "destination path is protected: $dest" "print"
             return 1
         ;;
     esac
@@ -169,15 +179,16 @@ sync_remote() {
     sshcheck_command "tmux" "$host" "fatal" "$user" "$key" "$port"
     sshcheck_command "java" "$host" "warn" "$user" "$key" "$port" || true
 
-    # Mirror information
+    # Sync information
     local login="${user:+$user@}$host"
     print
-    print "source:      $SERVER_ROOT/" "info"
-    print "destination: $login:$dest/" "info"
-    print "mode:        mirror (--delete enabled)" "info"
+    print "source:      $SERVER_ROOT/"
+    print "destination: $login:$dest/"
+    print "mode:        mirror"
     print
-    print "${yellow}WARNING${reset}: files existing only in destination may be removed." "warn"
+    print "${yellow}WARNING${reset}: destination files will be deleted to match the source."
     print
+    log_info "remote sync: $SERVER_ROOT/ -> $login:$dest/"
 
     # Check if session exist
     exists_tmux_session "$SESSION_NAME" && dot="${green}●${reset}"
