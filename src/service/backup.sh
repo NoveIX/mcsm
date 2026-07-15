@@ -119,12 +119,12 @@ while [[ "$backup_status" != "stop" ]]; do
     # Sleep delay before next backup, check if runtime.state and backup.state exists every second
     while [[ $elapsed -lt $delay ]]; do
         if [[ ! -f "$RUNTIME_STATE" ]]; then
-            log_info "runtime service state file not found. stopping backup process" "print"
+            log_info "runtime service state file not found. Stopping backup process" "print"
             backup_status="stop"; continue 2
         fi
 
         if [[ ! -f "$BACKUP_STATE" ]]; then
-            log_info "backup service state file not found. stopping backup process" "print"
+            log_info "backup service state file not found. Stopping backup process" "print"
             backup_status="stop"; continue 2
         fi
 
@@ -135,7 +135,7 @@ while [[ "$backup_status" != "stop" ]]; do
     # Check if crashctl exists
     if [[ -f "$CRASH_STATE" ]]; then
         log_warn "crash detected. Skipping current backup" "print"
-        backup_notify "warn" "Detect server crash. skip current backup"
+        backup_notify "warn" "Detect server crash. Backup skipped"
         continue
     fi
 
@@ -160,16 +160,33 @@ while [[ "$backup_status" != "stop" ]]; do
 
     # Send save-all command to the tmux session and wait for the save to complete
     if ! send_tmux "$SESSION_NAME" "0" "save-all flush"; then
-        log_error "failed to send save-all flush command (session: $SESSION_NAME, window: 0)" "print"
-        backup_notify "error" "Send save-all flush command"
+        log_error "failed to send save-all command (session: $SESSION_NAME, window: 0)" "print"
+        backup_notify "error" "Send save-all command"
         backup_status="stop"; continue
     fi
 
     # Wait for the "Saved the game" message in the latest.log file
     if ! wait_pattern "$SERVER_ROOT/logs/latest.log" "Saved the game"; then
-        log_error "timeout waiting for save-all completion (log: $SERVER_ROOT/logs/latest.log)" "print"
+        log_error "timeout waiting for save-all operation" "print"
         backup_notify "error" "Server save operation timed out"
-        backup_status="stop"; continue
+
+        # Retry save operation once
+        log_warn "retrying save-all operation" "print"
+
+        # Retry save operation once
+        log_warn "retrying save-all operation" "print"
+        if ! send_tmux "$SESSION_NAME" "0" "save-all flush"; then
+            log_error "failed to send save-all command during retry" "print"
+            backup_notify "error" "Send save-all command during retry"
+            backup_status="stop"; continue
+        fi
+
+        # Wait retry
+        if ! wait_pattern "$SERVER_ROOT/logs/latest.log" "Saved the game"; then
+            log_error "timeout waiting for save-all operation during retry. Backup skipped" "print"
+            backup_notify "error" "Server save operation timed out during retry. Backup skipped"
+            continue
+        fi
     fi
 
     # Send a message to the tmux session indicating that the backup is starting
