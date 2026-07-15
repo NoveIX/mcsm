@@ -5,7 +5,7 @@
 # Author: NoveIX
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-#set -euo pipefail
+set -euo pipefail
 
 # ================================[ Function ]================================ #
 
@@ -16,61 +16,56 @@ pause() {
 
 # ===============================[ Parameter ]================================ #
 
-# Define the directory of the script and its name
-readonly mcsl_dir="$1"
-readonly session_name="$2"
-readonly log_mode="$3"
-readonly mcsl_name="$(basename -- "${BASH_SOURCE[0]}")"
-readonly server_root="$(dirname "$mcsl_dir")"
+# service parameters
+readonly MCSL_DIR="$1"
+readonly LOG_MODE="$2"
+readonly SESSION_NAME="$3"
 
-# Source directories
-readonly cfg_dir="$mcsl_dir/cfg"
-readonly logs_dir="$mcsl_dir/logs"
-readonly core_dir="$mcsl_dir/src/lib/core"
+# ===============================[ constants ]================================ #
 
-# Runtime directory and control files
-readonly runtime_dir="$mcsl_dir/.runtime"
-readonly mcslctl="$runtime_dir/runtimectl"
-readonly crashctl="$runtime_dir/crashctl"
-
-# Backup configuration variables
-readonly backup_dir="$server_root/backups"
-
-# Runtime state variables
-runtime_status="run"
+# Resolve the absolute path of the mcsl installation directory.
+readonly MCSL_NAME="$(basename -- "${BASH_SOURCE[0]}")"
+readonly IMPORTSH="$MCSL_DIR/src/lib/core/import.sh"
 
 # ==============================[ Import module ]============================= #
 
 # Check if loader module exists
-if [[ ! -f "$core_dir/loader.sh" ]]; then
-    printf 'fatal: module loader.sh not found. required to execute script %s.\n' "$mcsl_name" >&2
+if [[ ! -f "$IMPORTSH" ]]; then
+    printf 'fatal: module import.sh not found. Required to execute script %s.\n' "$MCSL_NAME"
     pause
 fi
 
-# Load loader module
-source "$core_dir/loader.sh"
+# Load import module
+source "$IMPORTSH"
 
 # Load required module
-load_module "$core_dir/logger.sh" || pause
-load_module "$core_dir/parameter.sh" || pause
-load_module "$core_dir/command.sh" || pause
-load_module "$core_dir/common.sh" || pause
-load_module "$core_dir/config.sh" || pause
-load_module "$core_dir/filesystem.sh" || pause
-load_module "$core_dir/server.sh" || pause
-load_module "$core_dir/tmux.sh" || pause
+import "lib.core.ctx" || pause
+import "lib.core.logger" || pause
+import "lib.config.backup.read" || pause
+import "lib.config.notify.read" || pause
+import "lib.filesystem.cleanup" || pause
+import "lib.filesystem.create" || pause
+import "lib.filesystem.get" || pause
+import "lib.filesystem.remove" || pause
+import "lib.filesystem.wait" || pause
+import "lib.system.archive.check" || pause
+import "lib.tmux.exists.windows" || pause
+import "lib.util.convert.millisecond" || pause
 
 # ============================[ backup bootstrap ]============================ #
 
 # Generate log setting
-log_setting "$logs_dir/backup" "info" "noprint" "$log_mode"
+log_setting "$LOGS_DIR/backup" "info" "noprint" "$LOG_MODE"
 
-# Read mcsl backup config
-read_config_backup "$cfg_dir/backup.conf" || pause
-check_backup "$BACKUP_FORMAT" || pause
+# Read mcsl backup and notify config
+read_backup || pause
+read_notify || pause
+
+# Check archive system command
+check_archive || pause
 
 # Change dir to Minecraft server
-cd "$mcsl_dir/.."
+cd "$MCSL_DIR/.."
 log_info "changing working directory to the Minecraft server root" "print"
 
 # Read world directory from server.properties
@@ -80,48 +75,55 @@ world_dir=$(get_property "$server_root/server.properties" "level-name" ) || {
 }
 
 # Start backup process
+create_file "$BACKUP_STATE" "backup.state" "MCSL backup service up"
 log_info "starting mcsl backup service" "print"
 
 # ============================[ backup service ]============================== #
 
 sts=$(date +%s)
 
-# Wait for mcslctl to be available
-while [[ ! -f "$mcslctl" ]]; do
+# Wait for runtime.state to be available
+while [[ ! -f "$RUNTIME_STATE" ]]; do
     now=$(date +%s)
-    if (( now - sts >= 120 )); then
-        log_fatal "timeout waiting for $mcslctl" "print"
-        runtime_status="stop"; break
+    if (( now - sts >= 300 )); then
+        log_fatal "timeout waiting for $RUNTIME_STATE" "print"
+        backup_status="stop"; break
     fi
 
     sleep 1
 done
 
 # Wait Minecraft server to be ready
-#sleep 300
-sleep 30
+sleep 300
 
 log_info "backup service use this current settings (delay: $BACKUP_DELAY m, format: $BACKUP_FORMAT)" "print"
 
+# Runtime state variables
+backup_status="run"
+
 # Backup loop
-while [[ "$runtime_status" != "stop" ]]; do
+while [[ "$backup_status" != "stop" ]]; do
 
     # Ensure directory
-    if [[ ! -d "$backup_dir" ]] && ! mkdir -p "$backup_dir"; then
-        log_error "failed to create backup directory: $backup_dir" "print"
-        runtime_status="stop"; continue
+    if [[ ! -d "$BACKUP_DIR" ]] && ! mkdir -p "$BACKUP_DIR"; then
+        log_error "failed to create backup directory: $BACKUP_DIR" "print"
+        backup_status="stop"; continue
     fi
 
     # Convert minutes in seconds
     delay=$((BACKUP_DELAY * 60))
     elapsed=0
 
-    # Sleep loop with check every second
+    # Sleep delay before next backup, check if runtime.state and backup.state exists every second
     while [[ $elapsed -lt $delay ]]; do
-        # Check if mcslctl exists
-        if [[ ! -f "$mcslctl" ]]; then
-            log_info "mcsl runtime control file not found. stopping backup process" "print"
-            runtime_status="stop"; continue 2
+        if [[ ! -f "$RUNTIME_STATE" ]]; then
+            log_info "runtime service state file not found. stopping backup process" "print"
+            backup_status="stop"; continue 2
+        fi
+
+        if [[ ! -f "$BACKUP_STATE" ]]; then
+            log_info "backup service state file not found. stopping backup process" "print"
+            backup_status="stop"; continue 2
         fi
 
         ((elapsed++)) || true
@@ -129,47 +131,47 @@ while [[ "$runtime_status" != "stop" ]]; do
     done
 
     # Check if crashctl exists
-    if [[ -f "$crashctl" ]]; then
+    if [[ -f "$CRASH_STATE" ]]; then
         log_warn "crash detected. Skipping current backup" "print"
         continue
     fi
 
     if [[ ! -d "$world_dir" ]]; then
         log_error "world directory not found: $world_dir" "print"
-        runtime_status="stop"; continue
+        backup_status="stop"; continue
     fi
 
     # Backup name
     ts=$(date +%Y-%m-%d-%H-%M-%S)
 
-    # Check if the tmux session exists
+    # Check if the tmux session window exists
     if ! exists_tmux_window "$SESSION_NAME" "0"; then
-        log_error "tmux window 0 not found in session $SESSION_NAME" "print"
-        runtime_status="stop"; continue
+        log_error "tmux window not found (session: $SESSION_NAME, window: 0)" "print"
+        backup_status="stop"; continue
     fi
 
     sts=$(date +%s%3N)
 
     # Send save-all command to the tmux session and wait for the save to complete
     if ! send_tmux "$SESSION_NAME" "0" "save-all flush"; then
-        log_error "failed to send save-all command to $SESSION_NAME" "print"
-        runtime_status="stop"; continue
+        log_error "failed to send save-all flush command to tmux session: $SESSION_NAME" "print"
+        backup_status="stop"; continue
     fi
 
     # Wait for the "Saved the game" message in the latest.log file
-    if ! wait_pattern "$server_root/logs/latest.log" "Saved the game"; then
-        log_error "timeout waiting for save-all to complete" "print"
-        runtime_status="stop"; continue
+    if ! wait_pattern "$SERVER_ROOT/logs/latest.log" "Saved the game"; then
+        log_error "timeout waiting for save-all completion (log: $SERVER_ROOT/logs/latest.log)" "print"
+        backup_status="stop"; continue
     fi
 
     # Send a message to the tmux session indicating that the backup is starting
     if ! send_tmux "$SESSION_NAME" "0" "say Starting Server backup"; then
-        log_error "failed to send message to $SESSION_NAME" "print"
-        runtime_status="stop"; continue
+        log_error "failed to send backup notification command (session: $SESSION_NAME, window: 0)" "print"
+        backup_status="stop"; continue
     fi
 
     # Determine the backup file name based on the selected format
-    archive_file="$backup_dir/$ts.$BACKUP_FORMAT"
+    archive_file="$BACKUP_DIR/$ts.$BACKUP_FORMAT"
 
     # set return code for backup job
     rc=0
@@ -183,13 +185,13 @@ while [[ "$runtime_status" != "stop" ]]; do
 
     # Check if the backup command was successful
     if (( rc != 0 )); then
-        log_error "failed to create backup archive: $archive_file" "print"
+        log_error "failed to create backup archive (file: $archive_file)" "print"
         continue
     fi
 
     # Check if the backup archive was created
     if [[ ! -f "$archive_file" ]]; then
-        log_error "backup archive not found: $archive_file" "print"
+        log_error "backup archive missing (file: $archive_file)" "print"
         continue
     fi
 
@@ -197,20 +199,39 @@ while [[ "$runtime_status" != "stop" ]]; do
     ets=$(date +%s%3N)
     uts=$(( ets - sts ))
 
-    # Calculate the size of the backup file in bytes and human-readable format
-    bytes=$(stat -c%s "$archive_file") || log_warn "failed to read archive size" "print"
-    hbytes=$(numfmt --to=iec --suffix=B "$bytes") || log_warn "failed to convert archive size to human-readable format" "print"
+    # Calculate the size of the backup file
+    bytes=$(stat -c%s "$archive_file") || {
+        log_warn "failed to read archive size (file: $archive_file)" "print"
+        bytes=0
+    }
+
+    # Converto bytes in human-readable
+    hbytes=$(numfmt --to=iec --suffix=B "$bytes") || {
+        log_warn "failed to format archive size (bytes: $bytes)" "print"
+        hbytes="unknown"
+    }
 
     # Calculate the SHA1 checksum of the backup file
-    sha1=$(sha1sum "$archive_file" | awk '{print $1}') || log_warn "failed to calculate sha1" "print"
-    log_info "new backup created at $archive_file size: $hbytes took: $(format_durationms "$uts") sha1: $sha1" "print"
+    sha1=$(sha1sum "$archive_file" | awk '{print $1}') || {
+        log_warn "failed to calculate sha1 (file: $archive_file)" "print"
+        sha1="unknown"
+    }
+
+    # Backup completed
+    log_info "new backup created at $archive_file size: $hbytes took: $(convert_milliseconds "$uts") sha1: $sha1" "print"
 
     # Send a message to the tmux session indicating that the backup has finished
-    send_tmux "$SESSION_NAME" "0" "say Backup finished in $(format_durationms "$uts")" || true
+    if ! send_tmux "$SESSION_NAME" "0" "say Backup finished in $(convert_milliseconds "$uts")"; then
+        log_warn "failed to send backup completion message (session: $SESSION_NAME, window: 0)"
+    fi
+
+    # Cleanup old backups
+    cleanup_backup "$BACKUP_DIR" "$KEEP_LAST" "$BACKUP_FORMAT"
 done
 
 # Stop mcsl backup process
 log_info "shutting down mcsl backup service" "print"
+remove_file "$BACKUP_STATE" "runtime.state"
 
 # sleep to read logs before tmux close
 sleep 5

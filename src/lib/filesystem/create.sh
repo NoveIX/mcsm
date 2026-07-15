@@ -1,6 +1,6 @@
 # file: src/lib/filesystem/create.sh
 
-create_files() {
+create_file() {
     local file="$1"
     local name="$2"
     local value="${3:-}"

@@ -5,7 +5,7 @@ default_backup() {
 # MCSL Backup Configuration
 
 # Enable or disable automatic Minecraft server backups.
-EnableBackup=false
+BackupEnabled=false
 
 # Backup archive format.
 # Supported: zip, tar.gz, tar.xz, tar.zst
@@ -21,10 +21,10 @@ BackupFormat=zip
 # Default: 30
 BackupDelay=30
 
-# Number of days to retain backup files.
-# Backups older than this value will be deleted automatically.
+# Maximum number of backups to keep.
+# Older backups are removed automatically.
 # Set to -1 to keep backups indefinitely.
-# Default: 7
-CleanDays=7
+# Default: 5
+KeepLast=5
 EOF
 }

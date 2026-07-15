@@ -37,7 +37,7 @@ start_server() {
         print "generating default configuration"
         default_runtime "$RUNTIME_CONF"
         default_backup "$BACKUP_CONF"
-        default_event "$NOTIFY_CONF"
+        default_notify "$NOTIFY_CONF"
 
         # Log message to inform the user about the generated configuration file
         print "edit $RUNTIME_CONF to configure mcsl runtime"
@@ -70,7 +70,7 @@ start_server() {
         read_eula "$SERVER_ROOT/eula.txt"
 
         # Create the restart control file to indicate that the server will restart on crash.
-        create_files "$RESTART_CTL" "restartctl"
+        create_file "$RESTART_CTL" "restartctl"
 
         # Create a new detached tmux session that runs the mcsl script
         if tmux new-session -d -s "$session" -n "runtime" \
@@ -80,9 +80,9 @@ start_server() {
         fi
 
         # Create a new detached tmux window for backup operations
-        if [[ "$ENABLE_BACKUP" == "true" ]]; then
+        if [[ "$BACKUP_ENABLED" == "true" ]]; then
             if tmux new-window -t "$session" -n "backup" \
-            bash "$BACKUP_SERVICE" "$MCSL_DIR" "$session" "$LOG_FILES"; then
+            bash "$BACKUP_SERVICE" "$MCSL_DIR" "$LOG_FILES" "$session"; then
                 log_info "tmux window for backup does not exist, create new window: backup"
                 print "starting backup scheduler for server $session"
             fi

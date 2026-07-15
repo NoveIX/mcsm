@@ -33,3 +33,6 @@ readonly VERSION_FILE="$DATA_DIR/version"
 # Server
 readonly SERVER_ROOT="$(dirname "$MCSL_DIR")"
 readonly SERVER_CONTAINER="$(dirname "$SERVER_ROOT")"
+
+# Backup
+readonly BACKUP_DIR="$SERVER_ROOT/backups"

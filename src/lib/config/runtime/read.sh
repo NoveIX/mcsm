@@ -30,23 +30,23 @@ read_runtime() {
             MaxRestart)   MAX_RESTART="$value"      ;;
             LogFiles)     LOG_FILES="${value,,}"    ;;
             *)
-                log_warn "unknown key ignored: $key"
+                log_warn "ignored unknown key: $key"
             ;;
         esac
     done < "$file"
 
     # Validate required config
-    require_param "StartCommand" "$START_COMMAND" "read_runtime" || return 1
+    require_param "StartCommand" "$START_COMMAND" "read_runtime"
 
-    # Validate optional configs
+    # Default optional configs
     CRASH_HANDLE="${CRASH_HANDLE:-true}"
     MAX_RESTART="${MAX_RESTART:-3}"
     LOG_FILES="${LOG_FILES:-separate}"
 
-    # Validation
-    [[ "$CRASH_HANDLE" =~ ^(true|false)$ ]] || log_warn "invalid CrashHandle $CRASH_HANDLE (expected: true|false)" "print"
-    [[ "$MAX_RESTART" =~ ^(-1|[0-9]+)$ ]] || log_warn "invalid MaxRestart $MAX_RESTART (expected: positive integer or -1)" "print"
-    [[ "$LOG_FILES" =~ ^(separate|combined)$ ]] || log_warn "invalid LogFiles $LOG_FILES (expected: separate|combined)" "print"
+    # Validate optional configs
+    [[ "$CRASH_HANDLE" =~ ^(true|false)$ ]] || log_warn "invalid CrashHandle: $CRASH_HANDLE (expected: true|false)" "print"
+    [[ "$MAX_RESTART" =~ ^(-1|[0-9]+)$ ]] || log_warn "invalid MaxRestart: $MAX_RESTART (expected: positive integer or -1)" "print"
+    [[ "$LOG_FILES" =~ ^(separate|combined)$ ]] || log_warn "invalid LogFiles: $LOG_FILES (expected: separate|combined)" "print"
 
     log_info "runtime configuration loaded"
 }

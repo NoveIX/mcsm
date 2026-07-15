@@ -40,7 +40,7 @@ stop_server() {
     if exists_tmux_session "$session"; then
 
         # Remove the restartctl file to indicate that the server is stopping
-        remove_files "$RESTART_CTL" "restartctl"
+        remove_file "$RESTART_CTL" "restartctl"
 
         # Stop the server with a warning message if the time time is greater than 30 seconds
         if (( time > 30 )); then

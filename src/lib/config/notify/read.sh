@@ -4,15 +4,14 @@ import "lib.config.notify.default"
 import "lib.util.trim"
 
 read_notify() {
-    local file="$1"
+    local file="$NOTIFY_CONF"
     local key value
-    local valid=true
 
     mkdir -p "$CFG_DIR"
 
     # Check if config file exists
     if [[ ! -f "$file" ]]; then
-        log_info "generating default notify configuration" "print"
+        log_info "generating default notify configuration"
         default_notify "$file"
     fi
 
@@ -25,36 +24,37 @@ read_notify() {
         [[ -z "$key" || "$key" == \#* ]] && continue
 
         case "$key" in
-            EnableEvent)    ENABLE_EVENT="${value,,}" ;;
-            ServerName)     SERVER_NAME="$value"      ;;
-            DiscordWebHook) DISCORD_WEBHOOK="$value"  ;;
-            TelegramToken)  TELEGRAM_TOKEN="$value"   ;;
-            TelegramChatID) TELEGRAM_CHATID="$value"  ;;
+            ServerName)            SERVER_NAME="$value"        ;;
+            RuntimeNotifyEnabled)  RUNTIME_NOTIFY="${value,,}" ;;
+            RuntimeDiscordWebHook) RUNTIME_WEBHOOK="$value"    ;;
+            RuntimeTelegramToken)  RUNTIME_TOKEN="$value"      ;;
+            RuntimeTelegramChatID) RUNTIME_CHATID="$value"     ;;
+            BackupNotifyEnabled)   BACKUP_NOTIFY="${value,,}"  ;;
+            BackupDiscordWebHook)  BACKUP_WEBHOOK="$value"     ;;
+            BackupTelegramToken)   BACKUP_TOKEN="$value"       ;;
+            BackupTelegramChatID)  BACKUP_CHATID="$value"      ;;
             *)
-                log_error "unknown config key: $key"
-                valid=false
+                log_warn "ignored unknown key: $key"
             ;;
         esac
     done < "$file"
 
-    #    # Validation (notify-specific)
-    if [[ ! "$ENABLE_EVENT" =~ ^(true|false)$ ]]; then
-        log_error "invalid EnableNotification value $ENABLE_EVENT (expected true|false)" "print"
-        valid=false
-    fi
-
-    if [[ "$ENABLE_EVENT" == "true" ]]; then
-        [[ -z "$SERVER_NAME" ]] && log_warn "ServerName is empty" "print"
-        [[ -z "$DISCORD_WEBHOOK" ]] && log_warn "DiscordWebHook is empty (Discord notifications disabled)" "print"
-        [[ -z "$TELEGRAM_TOKEN" || -z "$TELEGRAM_CHATID" ]] && log_warn "Telegram is not fully configured (missing token or chat ID)" "print"
-    fi
-
-    if [[ "$valid" != "true" ]]; then
-        log_error "notify configuration validation failed" "print"
+    # Validate required config
+    if [[ ! "$RUNTIME_NOTIFY" =~ ^(true|false)$ ]]; then
+        log_error "invalid RuntimeNotifyEnabled: $RUNTIME_NOTIFY (expected: true|false)" "print"
         return 1
     fi
 
-    # Result
-    log_info "notify configuration loaded successfully"
-    return 0
+    if [[ ! "$BACKUP_NOTIFY" =~ ^(true|false)$ ]]; then
+        log_error "invalid BackupNotifyEnabled: $BACKUP_NOTIFY (expected: true|false)" "print"
+        return 1
+    fi
+
+    if [[ "$BACKUP_NOTIFY" == "true" ]]; then
+        BACKUP_WEBHOOK=${BACKUP_WEBHOOK:-$RUNTIME_WEBHOOK}
+        BACKUP_TOKEN=${BACKUP_TOKEN:-$RUNTIME_TOKEN}
+        BACKUP_CHATID=${BACKUP_CHATID:-$RUNTIME_CHATID}
+    fi
+
+    log_info "notify configuration loaded"
 }

@@ -13,10 +13,11 @@ RuntimeDiscordWebHook=
 RuntimeTelegramToken=
 RuntimeTelegramChatID=
 
-# Backup notifications.
 # By default, uses the corresponding runtime notification settings.
 # Leave DiscordWebHook, TelegramToken, or TelegramChatID empty to inherit them.
-BackupNotifyEvent=false
+
+# Backup notifications.
+BackupNotifyEnabled=false
 BackupDiscordWebHook=
 BackupTelegramToken=
 BackupTelegramChatID=

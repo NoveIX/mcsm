@@ -1,6 +1,6 @@
 # file: src/lib/filesystem/remove.sh
 
-remove_files() {
+remove_file() {
     local file="$1"
     local name="$2"
 
