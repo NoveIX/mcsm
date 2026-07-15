@@ -23,10 +23,10 @@ send_tmux() {
 
     # Send the command to the tmux session
     if tmux send-keys -t "${session}:${window}" "$*" C-m; then
-        log_info "sent command to $session: $*"
+        log_info "sent command to session $session: $*"
         return 0
     fi
 
-    log_error "failed to send command to $session: $*" "print"
+    log_error "failed to send command to session $session: $*" "print"
     return 1
 }

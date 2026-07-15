@@ -15,33 +15,33 @@ runtime_notify() {
     case "$type" in
         start)
             msg="Server is starting"
-            send_discord "$RUNTIME_WEBHOOK" "$SERVER_NAME" "$msg" "$DISCORD_GREEN" "start"
-            send_telegram "$RUNTIME_TOKEN" "$RUNTIME_CHATID" "<b>$SERVER_NAME</b>\n<i>🟢 $msg</i>" "start"
+            send_discord "$RUNTIME_WEBHOOK" "$SERVER_NAME" "$msg" "$DISCORD_GREEN" "start" || true
+            send_telegram "$RUNTIME_TOKEN" "$RUNTIME_CHATID" "<b>$SERVER_NAME</b>\n<i>🟢 $msg</i>" "start" || true
         ;;
 
         stop)
             msg="Server stopped"
-            send_discord "$RUNTIME_WEBHOOK" "$SERVER_NAME" "$msg" "$DISCORD_BLUE" "stop"
-            send_telegram "$RUNTIME_TOKEN" "$RUNTIME_CHATID" "<b>$SERVER_NAME</b>\n<i>🔵 $msg</i>" "stop"
+            send_discord "$RUNTIME_WEBHOOK" "$SERVER_NAME" "$msg" "$DISCORD_BLUE" "stop" || true
+            send_telegram "$RUNTIME_TOKEN" "$RUNTIME_CHATID" "<b>$SERVER_NAME</b>\n<i>🔵 $msg</i>" "stop" || true
         ;;
 
         handle)
             msg="Crash handling disabled. Server will not restart"
-            send_discord "$RUNTIME_WEBHOOK" "$SERVER_NAME" "$msg" "$DISCORD_YELLOW" "handle"
-            send_telegram "$RUNTIME_TOKEN" "$RUNTIME_CHATID" "<b>$SERVER_NAME</b>\n<i>🟡 $msg</i>" "handle"
+            send_discord "$RUNTIME_WEBHOOK" "$SERVER_NAME" "$msg" "$DISCORD_YELLOW" "handle" || true
+            send_telegram "$RUNTIME_TOKEN" "$RUNTIME_CHATID" "<b>$SERVER_NAME</b>\n<i>🟡 $msg</i>" "handle" || true
         ;;
 
         crash)
             msg="Server crashed after $(convert_seconds "$uts"). Restarting"
-            send_discord "$RUNTIME_WEBHOOK" "$SERVER_NAME" "$msg" "$DISCORD_YELLOW" "crash"
-            send_telegram "$RUNTIME_TOKEN" "$RUNTIME_CHATID" "<b>$SERVER_NAME</b>\n<i>🟡 $msg</i>" "crash"
+            send_discord "$RUNTIME_WEBHOOK" "$SERVER_NAME" "$msg" "$DISCORD_YELLOW" "crash" || true
+            send_telegram "$RUNTIME_TOKEN" "$RUNTIME_CHATID" "<b>$SERVER_NAME</b>\n<i>🟡 $msg</i>" "crash" || true
 
         ;;
 
         loop)
             msg="Server crash limit reached (max $MAX_RESTART). Server will not restart"
-            send_discord "$RUNTIME_WEBHOOK" "$SERVER_NAME" "$msg" "$DISCORD_RED" "loop"
-            send_telegram "$RUNTIME_TOKEN" "$RUNTIME_CHATID" "<b>$SERVER_NAME</b>\n<i>🔴 $msg</i>" "loop"
+            send_discord "$RUNTIME_WEBHOOK" "$SERVER_NAME" "$msg" "$DISCORD_RED" "loop" || true
+            send_telegram "$RUNTIME_TOKEN" "$RUNTIME_CHATID" "<b>$SERVER_NAME</b>\n<i>🔴 $msg</i>" "loop" || true
         ;;
 
         *)

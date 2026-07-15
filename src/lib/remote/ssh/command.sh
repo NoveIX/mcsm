@@ -17,7 +17,7 @@ sshcheck_command() {
     fi
 
     # Log missing command based on priority
-    local msg="remote host $host: command found: $cmd"
+    local msg="remote host $host: command not found: $cmd"
 
     case "$mode" in
         warn)  log_warn  "$msg" "print" ;;

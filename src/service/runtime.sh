@@ -144,4 +144,4 @@ log_info "shutting down mcsl runtime service" "print"
 remove_file "$RUNTIME_STATE" "runtime.state"
 
 # sleep to read logs before tmux close
-sleep 5
+sleep 10

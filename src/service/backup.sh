@@ -48,8 +48,10 @@ import "lib.filesystem.create" || pause
 import "lib.filesystem.get" || pause
 import "lib.filesystem.remove" || pause
 import "lib.filesystem.wait" || pause
+import "lib.notify.backup" || pause
 import "lib.system.archive.check" || pause
-import "lib.tmux.exists.windows" || pause
+import "lib.tmux.send" || pause
+import "lib.tmux.exists.window" || pause
 import "lib.util.convert.millisecond" || pause
 
 # ============================[ backup bootstrap ]============================ #
@@ -69,7 +71,7 @@ cd "$MCSL_DIR/.."
 log_info "changing working directory to the Minecraft server root" "print"
 
 # Read world directory from server.properties
-world_dir=$(get_property "$server_root/server.properties" "level-name" ) || {
+world_dir=$(get_property "$SERVER_ROOT/server.properties" "level-name" ) || {
     log_warn "failed to read level-name from server.properties. using default world directory: world" "print"
     world_dir="world"
 }
@@ -94,9 +96,9 @@ while [[ ! -f "$RUNTIME_STATE" ]]; do
 done
 
 # Wait Minecraft server to be ready
-sleep 300
-
-log_info "backup service use this current settings (delay: $BACKUP_DELAY m, format: $BACKUP_FORMAT)" "print"
+log_info "runtime state file found. waiting for Minecraft server to be ready" "print"
+wait_pattern "$SERVER_ROOT/logs/latest.log" "Done (" || log_warn "timeout waiting for Minecraft server to be ready" "print"
+log_info "backup service use this current settings (delay: $BACKUP_DELAY m, format: $BACKUP_FORMAT, keep: $KEEP_LAST)" "print"
 
 # Runtime state variables
 backup_status="run"
@@ -133,20 +135,24 @@ while [[ "$backup_status" != "stop" ]]; do
     # Check if crashctl exists
     if [[ -f "$CRASH_STATE" ]]; then
         log_warn "crash detected. Skipping current backup" "print"
+        backup_notify "warn" "Detect server crash. skip current backup"
         continue
     fi
 
     if [[ ! -d "$world_dir" ]]; then
         log_error "world directory not found: $world_dir" "print"
+        backup_notify "fail" "World directory not found"
         backup_status="stop"; continue
     fi
 
     # Backup name
     ts=$(date +%Y-%m-%d-%H-%M-%S)
+    backup_notify "info"
 
     # Check if the tmux session window exists
     if ! exists_tmux_window "$SESSION_NAME" "0"; then
         log_error "tmux window not found (session: $SESSION_NAME, window: 0)" "print"
+        backup_notify "fail" "Tmux window not found"
         backup_status="stop"; continue
     fi
 
@@ -154,24 +160,26 @@ while [[ "$backup_status" != "stop" ]]; do
 
     # Send save-all command to the tmux session and wait for the save to complete
     if ! send_tmux "$SESSION_NAME" "0" "save-all flush"; then
-        log_error "failed to send save-all flush command to tmux session: $SESSION_NAME" "print"
+        log_error "failed to send save-all flush command (session: $SESSION_NAME, window: 0)" "print"
+        backup_notify "fail" "Send save-all flush command"
         backup_status="stop"; continue
     fi
 
     # Wait for the "Saved the game" message in the latest.log file
     if ! wait_pattern "$SERVER_ROOT/logs/latest.log" "Saved the game"; then
         log_error "timeout waiting for save-all completion (log: $SERVER_ROOT/logs/latest.log)" "print"
+        backup_notify "fail" "Server save operation timed out"
         backup_status="stop"; continue
     fi
 
     # Send a message to the tmux session indicating that the backup is starting
     if ! send_tmux "$SESSION_NAME" "0" "say Starting Server backup"; then
-        log_error "failed to send backup notification command (session: $SESSION_NAME, window: 0)" "print"
-        backup_status="stop"; continue
+        log_warn "failed to send backup notification command (session: $SESSION_NAME, window: 0)" "print"
     fi
 
     # Determine the backup file name based on the selected format
-    archive_file="$BACKUP_DIR/$ts.$BACKUP_FORMAT"
+    archive_name="$ts.$BACKUP_FORMAT"
+    archive_file="$BACKUP_DIR/$archive_name"
 
     # set return code for backup job
     rc=0
@@ -186,12 +194,14 @@ while [[ "$backup_status" != "stop" ]]; do
     # Check if the backup command was successful
     if (( rc != 0 )); then
         log_error "failed to create backup archive (file: $archive_file)" "print"
+        backup_notify "fail" "Create backup archive"
         continue
     fi
 
     # Check if the backup archive was created
     if [[ ! -f "$archive_file" ]]; then
         log_error "backup archive missing (file: $archive_file)" "print"
+        backup_notify "fail" "Missing backup archive"
         continue
     fi
 
@@ -219,6 +229,7 @@ while [[ "$backup_status" != "stop" ]]; do
 
     # Backup completed
     log_info "new backup created at $archive_file size: $hbytes took: $(convert_milliseconds "$uts") sha1: $sha1" "print"
+    backup_notify "done" "File: $archive_name\nSize: $hbytes\nDuration: $(convert_milliseconds "$uts")\nsha1: $sha1"
 
     # Send a message to the tmux session indicating that the backup has finished
     if ! send_tmux "$SESSION_NAME" "0" "say Backup finished in $(convert_milliseconds "$uts")"; then
@@ -234,4 +245,4 @@ log_info "shutting down mcsl backup service" "print"
 remove_file "$BACKUP_STATE" "runtime.state"
 
 # sleep to read logs before tmux close
-sleep 5
+sleep 10

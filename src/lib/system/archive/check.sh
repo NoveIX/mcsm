@@ -1,5 +1,7 @@
 # file: src/lib/system/tools/archive/check.sh
 
+import "lib.core.command"
+
 check_archive() {
     local format="$BACKUP_FORMAT"
 

@@ -7,41 +7,35 @@ import "lib.util.convert.second"
 
 backup_notify() {
     local type="$1"
+    local detail="${2:-}"
     local msg
 
     # Check notification enabled
     [[ "$BACKUP_NOTIFY" == "true" ]] || return 0
 
     case "$type" in
-        start)
-            msg="Server is starting"
-            send_discord "$BACKUP_WEBHOOK" "$SERVER_NAME" "$msg" "$DISCORD_GREEN" "start"
-            send_telegram "$BACKUP_TOKEN" "$BACKUP_CHATID" "<b>$SERVER_NAME</b>\n<i>🟢 $msg</i>" "start"
+        info)
+            msg="Backup is starting"
+            send_discord "$BACKUP_WEBHOOK" "$SERVER_NAME" "$msg" "$DISCORD_GREEN" "start" || true
+            send_telegram "$BACKUP_TOKEN" "$BACKUP_CHATID" "<b>$SERVER_NAME</b>\n<i>🔵 $msg</i>" "start" || true
         ;;
 
-        stop)
-            msg="Server stopped"
-            send_discord "$BACKUP_WEBHOOK" "$SERVER_NAME" "$msg" "$DISCORD_BLUE" "stop"
-            send_telegram "$BACKUP_TOKEN" "$BACKUP_CHATID" "<b>$SERVER_NAME</b>\n<i>🔵 $msg</i>" "stop"
+        done)
+            msg="Backup completed\n\n$detail"
+            send_discord "$BACKUP_WEBHOOK" "$SERVER_NAME" "$msg" "$DISCORD_BLUE" "done" || true
+            send_telegram "$BACKUP_TOKEN" "$BACKUP_CHATID" "<b>$SERVER_NAME</b>\n<i>🟢 $msg</i>" "done" || true
         ;;
 
-        handle)
-            msg="Crash handling disabled. Server will not restart"
-            send_discord "$BACKUP_WEBHOOK" "$SERVER_NAME" "$msg" "$DISCORD_YELLOW" "handle"
-            send_telegram "$BACKUP_TOKEN" "$BACKUP_CHATID" "<b>$SERVER_NAME</b>\n<i>🟡 $msg</i>" "handle"
+        warn)
+            msg="Backup warning\n\nReason:\n$detail"
+            send_discord "$BACKUP_WEBHOOK" "$SERVER_NAME" "$msg" "$DISCORD_YELLOW" "warn" || true
+            send_telegram "$BACKUP_TOKEN" "$BACKUP_CHATID" "<b>$SERVER_NAME</b>\n<i>🟡 $msg</i>" "warn" || true
         ;;
 
-        crash)
-            msg="Server crashed after $(convert_seconds "$uts"). Restarting"
-            send_discord "$BACKUP_WEBHOOK" "$SERVER_NAME" "$msg" "$DISCORD_YELLOW" "crash"
-            send_telegram "$BACKUP_TOKEN" "$BACKUP_CHATID" "<b>$SERVER_NAME</b>\n<i>🟡 $msg</i>" "crash"
-
-        ;;
-
-        loop)
-            msg="Server crash limit reached (max $MAX_RESTART). Server will not restart"
-            send_discord "$BACKUP_WEBHOOK" "$SERVER_NAME" "$msg" "$DISCORD_RED" "loop"
-            send_telegram "$BACKUP_TOKEN" "$BACKUP_CHATID" "<b>$SERVER_NAME</b>\n<i>🔴 $msg</i>" "loop"
+        fail)
+            msg="Backup failed\n\nReason:\n$detail"
+            send_discord "$BACKUP_WEBHOOK" "$SERVER_NAME" "$msg" "$DISCORD_RED" "fail" || true
+            send_telegram "$BACKUP_TOKEN" "$BACKUP_CHATID" "<b>$SERVER_NAME</b>\n<i>🔴 $msg</i>" "fail" || true
         ;;
 
         *)
