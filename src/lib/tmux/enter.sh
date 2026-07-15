@@ -1,7 +1,7 @@
 # file: src/lib/tmux/enter.sh
 
-
 import "lib.tmux.exists.session"
+import "lib.tmux.exists.window"
 
 enter_tmux() {
     local session="$1"
@@ -10,6 +10,12 @@ enter_tmux() {
     # Check if the tmux session exists
     if ! exists_tmux_session "$session"; then
         log_error "tmux session $session not found" "print"
+        return 1
+    fi
+
+    # Check if the tmux window exists
+    if ! exists_tmux_window "$session" "$window"; then
+        log_error "tmux session $session window $window not found" "print"
         return 1
     fi
 

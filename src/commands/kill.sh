@@ -36,6 +36,7 @@ kill_server() {
     # Check if the tmux session exists.
     if exists_tmux_session "$session"; then
         kill_tmux "$session"
+        print "tmux session $session killed"
         return 0
     fi
 

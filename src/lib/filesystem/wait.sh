@@ -19,7 +19,7 @@
 wait_pattern() {
     local file="$1"
     local pattern="$2"
-    local tsec="${3:-300}"
+    local tsec="${3:-90}"
 
     timeout "$tsec" \
     tail -n0 -F "$file" 2>/dev/null |

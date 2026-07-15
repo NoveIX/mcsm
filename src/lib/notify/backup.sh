@@ -16,26 +16,32 @@ backup_notify() {
     case "$type" in
         info)
             msg="Backup is starting"
-            send_discord "$BACKUP_WEBHOOK" "$SERVER_NAME" "$msg" "$DISCORD_GREEN" "start" || true
-            send_telegram "$BACKUP_TOKEN" "$BACKUP_CHATID" "<b>$SERVER_NAME</b>\n<i>🔵 $msg</i>" "start" || true
-        ;;
-
-        done)
-            msg="Backup completed\n\n$detail"
-            send_discord "$BACKUP_WEBHOOK" "$SERVER_NAME" "$msg" "$DISCORD_BLUE" "done" || true
-            send_telegram "$BACKUP_TOKEN" "$BACKUP_CHATID" "<b>$SERVER_NAME</b>\n<i>🟢 $msg</i>" "done" || true
+            send_discord "$BACKUP_WEBHOOK" "$SERVER_NAME" "$msg" "$DISCORD_BLUE" "info" || true
+            send_telegram "$BACKUP_TOKEN" "$BACKUP_CHATID" "<b>🔵 $SERVER_NAME</b>\n$msg" "info" || true
         ;;
 
         warn)
             msg="Backup warning\n\nReason:\n$detail"
             send_discord "$BACKUP_WEBHOOK" "$SERVER_NAME" "$msg" "$DISCORD_YELLOW" "warn" || true
-            send_telegram "$BACKUP_TOKEN" "$BACKUP_CHATID" "<b>$SERVER_NAME</b>\n<i>🟡 $msg</i>" "warn" || true
+            send_telegram "$BACKUP_TOKEN" "$BACKUP_CHATID" "<b>🟡 $SERVER_NAME</b>\n$msg" "warn" || true
         ;;
 
-        fail)
+        error)
             msg="Backup failed\n\nReason:\n$detail"
-            send_discord "$BACKUP_WEBHOOK" "$SERVER_NAME" "$msg" "$DISCORD_RED" "fail" || true
-            send_telegram "$BACKUP_TOKEN" "$BACKUP_CHATID" "<b>$SERVER_NAME</b>\n<i>🔴 $msg</i>" "fail" || true
+            send_discord "$BACKUP_WEBHOOK" "$SERVER_NAME" "$msg" "$DISCORD_RED" "error" || true
+            send_telegram "$BACKUP_TOKEN" "$BACKUP_CHATID" "<b>🔴 $SERVER_NAME</b>\n$msg" "error" || true
+        ;;
+
+        fatal)
+            msg="Backup fatal\n\nReason:\n$detail"
+            send_discord "$BACKUP_WEBHOOK" "$SERVER_NAME" "$msg" "$DISCORD_PURPLE" "fatal" || true
+            send_telegram "$BACKUP_TOKEN" "$BACKUP_CHATID" "<b>🟣 $SERVER_NAME</b>\n$msg" "fatal" || true
+        ;;
+
+        done)
+            msg="Backup completed\n\n$detail"
+            send_discord "$BACKUP_WEBHOOK" "$SERVER_NAME" "$msg" "$DISCORD_GREEN" "done" || true
+            send_telegram "$BACKUP_TOKEN" "$BACKUP_CHATID" "<b>🟢 $SERVER_NAME</b>\n$msg" "done" || true
         ;;
 
         *)

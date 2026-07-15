@@ -5,7 +5,7 @@
 # Author: NoveIX
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-set -euo pipefail
+#set -euo pipefail
 
 # ================================[ Function ]================================ #
 
@@ -141,7 +141,7 @@ while [[ "$backup_status" != "stop" ]]; do
 
     if [[ ! -d "$world_dir" ]]; then
         log_error "world directory not found: $world_dir" "print"
-        backup_notify "fail" "World directory not found"
+        backup_notify "error" "World directory not found"
         backup_status="stop"; continue
     fi
 
@@ -152,7 +152,7 @@ while [[ "$backup_status" != "stop" ]]; do
     # Check if the tmux session window exists
     if ! exists_tmux_window "$SESSION_NAME" "0"; then
         log_error "tmux window not found (session: $SESSION_NAME, window: 0)" "print"
-        backup_notify "fail" "Tmux window not found"
+        backup_notify "error" "Tmux window not found"
         backup_status="stop"; continue
     fi
 
@@ -161,14 +161,14 @@ while [[ "$backup_status" != "stop" ]]; do
     # Send save-all command to the tmux session and wait for the save to complete
     if ! send_tmux "$SESSION_NAME" "0" "save-all flush"; then
         log_error "failed to send save-all flush command (session: $SESSION_NAME, window: 0)" "print"
-        backup_notify "fail" "Send save-all flush command"
+        backup_notify "error" "Send save-all flush command"
         backup_status="stop"; continue
     fi
 
     # Wait for the "Saved the game" message in the latest.log file
     if ! wait_pattern "$SERVER_ROOT/logs/latest.log" "Saved the game"; then
         log_error "timeout waiting for save-all completion (log: $SERVER_ROOT/logs/latest.log)" "print"
-        backup_notify "fail" "Server save operation timed out"
+        backup_notify "error" "Server save operation timed out"
         backup_status="stop"; continue
     fi
 
@@ -194,14 +194,14 @@ while [[ "$backup_status" != "stop" ]]; do
     # Check if the backup command was successful
     if (( rc != 0 )); then
         log_error "failed to create backup archive (file: $archive_file)" "print"
-        backup_notify "fail" "Create backup archive"
+        backup_notify "error" "Create backup archive"
         continue
     fi
 
     # Check if the backup archive was created
     if [[ ! -f "$archive_file" ]]; then
         log_error "backup archive missing (file: $archive_file)" "print"
-        backup_notify "fail" "Missing backup archive"
+        backup_notify "error" "Missing backup archive"
         continue
     fi
 

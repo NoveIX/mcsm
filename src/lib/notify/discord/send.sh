@@ -5,7 +5,7 @@ import "lib.notify.discord.json"
 send_discord() {
     local webhook_url="$1"
     local title="$2"
-    local message="$3"
+    local message=$(printf %b "$3")
     local color="${4:-2326507}" # blu default
     local type="$5"
 

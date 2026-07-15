@@ -76,7 +76,7 @@ while [[ "$runtime_status" != "stop" ]]; do
     create_file "$UPTIME_TIMESTAMP" "uptime.timestamp" "$sts"
 
     # Notify on discord telegram
-    runtime_notify "start"
+    runtime_notify "done" "Server is starting"
 
     # Remove crash control file
     remove_file "$CRASH_STATE" "crash.state"
@@ -109,14 +109,14 @@ while [[ "$runtime_status" != "stop" ]]; do
 
     # Stop requested
     if [[ ! -f "$RESTART_CTL" ]]; then
-        runtime_notify "stop"
+        runtime_notify "info" "Server stopped"
         runtime_status="stop"; continue
     fi
 
     # Check crash handling setting
     if [[ "$CRASH_HANDLE" == "false" ]]; then
         log_info "crash handling disabled. Server will not restart" "print"
-        runtime_notify "handle"
+        runtime_notify "warn" "Crash handling disabled. Server will not restart"
         runtime_status="stop"; continue
     fi
 
@@ -126,12 +126,12 @@ while [[ "$runtime_status" != "stop" ]]; do
     # Server crashed
     (( crash_count++ )) || true
     log_warn "Minecraft server crashed. Restarting (attempt: $crash_count)" "print"
-    runtime_notify "crash"
+    runtime_notify "warn" "Server crashed after $(convert_seconds "$uts"). Restarting"
 
     # Check crash retry limit
     if (( MAX_RESTART >= 0 && crash_count >= MAX_RESTART )); then
         log_warn "crash limit reached (max: $MAX_RESTART). Server will not restart" "print"
-        runtime_notify "loop"
+        runtime_notify "error" "Server crash limit reached (max $MAX_RESTART). Server will not restart"
         runtime_status="stop"; continue
     fi
 
