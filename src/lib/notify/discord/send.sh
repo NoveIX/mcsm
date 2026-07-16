@@ -23,11 +23,11 @@ send_discord() {
         -d "$payload" \
         "$webhook_url"; then
 
-            log_info "Discord $type notification sent"
+            log_info "Discord notification type $type sent"
             return 0
         fi
 
-        log_error "curl: failed to send Discord $type notification" "print"
+        log_error "curl: failed to send Discord notification type $type" "print"
         return 1
     fi
 
@@ -39,11 +39,11 @@ send_discord() {
         -O /dev/null \
         "$webhook_url"; then
 
-            log_info "Discord $type notification sent"
+            log_info "Discord notification type $type sent"
             return 0
         fi
 
-        log_error "wget: failed to send Discord $type notification" "print"
+        log_error "wget: failed to send Discord notification type $type" "print"
         return 1
     fi
 

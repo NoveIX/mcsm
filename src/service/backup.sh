@@ -172,9 +172,6 @@ while [[ "$backup_status" != "stop" ]]; do
 
         # Retry save operation once
         log_warn "retrying save-all operation" "print"
-
-        # Retry save operation once
-        log_warn "retrying save-all operation" "print"
         if ! send_tmux "$SESSION_NAME" "0" "save-all flush"; then
             log_error "failed to send save-all command during retry" "print"
             backup_notify "error" "Send save-all command during retry"

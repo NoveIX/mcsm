@@ -17,11 +17,11 @@ send_telegram() {
             -d "parse_mode=HTML" \
             "$url" >/dev/null; then
 
-            log_info "Telegram $type notification sent"
+            log_info "Telegram notification type $type sent"
             return 0
         fi
 
-        log_error "curl: failed to send Telegram $type notification" "print"
+        log_error "curl: failed to send Telegram notification type $type" "print"
         return 1
     fi
 
@@ -33,11 +33,11 @@ send_telegram() {
             -O /dev/null \
             "$url"; then
 
-            log_info "Telegram $type notification sent"
+            log_info "Telegram notification type $type sent"
             return 0
         fi
 
-        log_error "wget: failed to send Telegram $type notification" "print"
+        log_error "wget: failed to send Telegram notification type $type" "print"
         return 1
     fi
 
