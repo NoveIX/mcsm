@@ -1,14 +1,12 @@
 # file: src/commands/status.sh
 
-# ================================[ Command ]================================= #
-
 status_server() {
     local session="$1"
     local host="$2"
     local port="$3"
     local all="$4"
 
-    # =================================[ invoke ]================================= #
+    # INVOKE
 
     if [[ "$all" == "true" || "$session" != "$SESSION_NAME" ]]; then
         import "lib.remote.invoke"
@@ -23,7 +21,7 @@ status_server() {
         return 0
     fi
 
-    # ===============================[ execution ]================================ #
+    # EXECUTION
 
     # Function var
     local address="$host"

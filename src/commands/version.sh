@@ -1,7 +1,5 @@
 # file: src/commands/version.sh
 
-# ================================[ Command ]================================= #
-
 get_version() {
     # Extract version by removing ONLY carriage returns, preserving all spaces
     local version

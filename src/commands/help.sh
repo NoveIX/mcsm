@@ -1,7 +1,5 @@
 # file: src/commands/help.sh
 
-# ================================[ Command ]================================= #
-
 print_help() {
     import "commands.version"
 

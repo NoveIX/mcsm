@@ -36,6 +36,42 @@ main() {
 
     # Parse flags
     while [[ $# -gt 0 ]]; do
+
+        # Parse combined short flags (-cq, -cwa, etc.)
+        if [[ "$1" =~ ^-[^-]{2,}$ ]]; then
+            flags="${1:1}"
+
+            while [[ -n "$flags" ]]; do
+                flag="${flags:0:1}"
+                flags="${flags:1}"
+
+                case "$flag" in
+                    c)
+                        console="true"
+                        validate_flag "console" "${2:-}"
+                    ;;
+
+                    w)
+                        wait="true"
+                        validate_flag "wait" "${2:-}"
+                    ;;
+
+                    a)
+                        all="true"
+                        validate_flag "all" "${2:-}"
+                    ;;
+
+                    *)
+                        log_error "unknown argument: -$flag" "print"
+                        return 1
+                    ;;
+                esac
+            done
+
+            shift
+            continue
+        fi
+
         case "$1" in
             --session|-s)
                 session="${2:-}"
@@ -173,19 +209,25 @@ main() {
         # Migration command. Migrates the server to another location or host.
         migrate)
             import "commands.migrate"
-            migrate_server "$dest" "$host" "$user" "$key" "$port" "$time"
+            migrate_server "$dest" "$host" "$user" "$key" "$port" "$time" "$confirm" "$restart"
         ;;
 
         # Sync command. Sync the server files to another location or host.
         sync)
             import "commands.sync"
-            sync_server "$dest" "$host" "$user" "$key" "$port"
+            sync_server "$dest" "$host" "$user" "$key" "$port" "$confirm"
         ;;
 
         # Kill command. Kill the tmux session of the server immediately.
         kill)
             import "commands.kill"
             kill_server "$session" "$confirm"
+        ;;
+
+        #
+        service)
+            import "commands.service"
+
         ;;
 
         # SelfUpdate command. Updates the mcsl script itself.

@@ -1,14 +1,12 @@
 # file: src/commands/restart.sh
 
-# ================================[ Command ]================================= #
-
 restart_server() {
     local session="$1"
     local time="$2"
     local console="$3"
     local all="$4"
 
-    # =================================[ invoke ]================================= #
+    # INVOKE
 
     if [[ "$all" == "true" || "$session" != "$SESSION_NAME" ]]; then
         import "lib.remote.invoke"
@@ -26,7 +24,7 @@ restart_server() {
         return 0
     fi
 
-    # ===============================[ execution ]================================ #
+    # EXECUTION
 
     # Import required module
     log_info "import required modules"

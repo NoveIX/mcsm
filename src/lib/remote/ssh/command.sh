@@ -12,12 +12,12 @@ sshcheck_command() {
 
     # Check if command exists - remote SSH
     if execute_ssh "$host" "$user" "$key" "$port" command -v "$cmd" >/dev/null 2>&1; then
-        log_info "remote host $host: command found: $cmd"
+        log_info "remote host $host command found: $cmd"
         return 0
     fi
 
     # Log missing command based on priority
-    local msg="remote host $host: command not found: $cmd"
+    local msg="remote host $host command not found: $cmd"
 
     case "$mode" in
         warn)  log_warn  "$msg" "print" ;;

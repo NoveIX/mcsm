@@ -1,13 +1,12 @@
 # file: src/commands/migrate.sh
 
-# ================================[ Command ]================================= #
-
 sync_server() {
     local dest="$1"
     local host="$2"
     local user="$3"
     local key="$4"
     local port="$5"
+    local confirm="$6"
 
     # Check mandatory parameters
     require_param "dest" "$dest" "migrate"
@@ -15,7 +14,7 @@ sync_server() {
     [[ "$dest" == *:* ]] && host="${dest%%:*}"
     if [[ -z "$host" ]]; then
         log_info "missing host parameter, performing local sync"
-        sync_local "$dest" "$time"
+        sync_local "$dest" "$time" "$confirm"
     else
         log_info "host parameter detected, performing remote sync"
         sync_remote "$@"
@@ -27,6 +26,7 @@ sync_server() {
 sync_local() {
     local dest="$1"
     local time="$2"
+    local confirm="$3"
     local red="\033[31m"
     local yellow="\033[33m"
     local green="\033[32m"
@@ -72,24 +72,28 @@ sync_local() {
     fi
 
     # Sync information
-    print
-    print "source:      $SERVER_ROOT/"
-    print "destination: $dest/"
-    print "mode:        mirror"
-    print
-    print "${yellow}WARNING${reset}: destination files will be deleted to match the source."
-    print
+    if [[ "$confirm" == "false" ]]; then
+        print
+        print "source:      $SERVER_ROOT/"
+        print "destination: $dest/"
+        print "mode:        mirror"
+        print
+        print "${yellow}WARNING${reset}: destination files will be deleted to match the source."
+        print
+    fi
     log_info "local sync: $SERVER_ROOT/ -> $dest/"
 
     # Check if session exist
     exists_tmux_session "$SESSION_NAME" && dot="${green}●${reset}"
 
     # Check if user wants to continue
-    printf '%b' "$dot "
-    read -r -p "Create mirror copy of the server $SESSION_NAME. Proceed with sync? [y/N]: " answer
-    if [[ "${answer,,}" != "y" ]]; then
-        print "synchronization aborted by user" "info"
-        return 0
+    if [[ "$confirm" == "false" ]]; then
+        printf '%b' "$dot "
+        read -r -p "Create mirror copy of the server $SESSION_NAME. Proceed with sync? [y/N]: " answer
+        if [[ "${answer,,}" != "y" ]]; then
+            print "synchronization aborted by user" "info"
+            return 0
+        fi
     fi
 
     # Ensure directory
@@ -120,6 +124,7 @@ sync_remote() {
     local user="$3"
     local key="$4"
     local port="$5"
+    local confirm="$6"
     local red="\033[31m"
     local yellow="\033[33m"
     local green="\033[32m"
@@ -196,24 +201,28 @@ sync_remote() {
 
     # Sync information
     local login="${user:+$user@}$host"
-    print
-    print "source:      $SERVER_ROOT/"
-    print "destination: $login:$dest/"
-    print "mode:        mirror"
-    print
-    print "${yellow}WARNING${reset}: destination files will be deleted to match the source."
-    print
+    if [[ "$confirm" == "false" ]]; then
+        print
+        print "source:      $SERVER_ROOT/"
+        print "destination: $login:$dest/"
+        print "mode:        mirror"
+        print
+        print "${yellow}WARNING${reset}: destination files will be deleted to match the source."
+        print
+    fi
     log_info "remote sync: $SERVER_ROOT/ -> $login:$dest/"
 
     # Check if session exist
     exists_tmux_session "$SESSION_NAME" && dot="${green}●${reset}"
 
     # Check if user wants to continue
-    printf '%b' "$dot "
-    read -r -p "Create mirror copy of the server $SESSION_NAME. Proceed with sync? [y/N]: " answer
-    if [[ "${answer,,}" != "y" ]]; then
-        print "synchronization aborted by user" "info"
-        return 0
+    if [[ "$confirm" == "false" ]]; then
+        printf '%b' "$dot "
+        read -r -p "Create mirror copy of the server $SESSION_NAME. Proceed with sync? [y/N]: " answer
+        if [[ "${answer,,}" != "y" ]]; then
+            print "synchronization aborted by user" "info"
+            return 0
+        fi
     fi
 
     # Ensure directory

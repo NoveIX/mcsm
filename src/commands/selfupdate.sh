@@ -1,12 +1,10 @@
 # file: src/commands/selfupdate.sh
 
-# ================================[ Command ]================================= #
-
 selfupdate() {
     local session="$1"
     local all="$2"
 
-    # =================================[ invoke ]================================= #
+    # INVOKE
 
     if [[ "$all" == "true" || "$session" != "$SESSION_NAME" ]]; then
         import "lib.remote.invoke"
@@ -21,7 +19,7 @@ selfupdate() {
         return 0
     fi
 
-    # ===============================[ execution ]================================ #
+    # EXECUTION
 
     # Import required module
     log_info "import required modules"

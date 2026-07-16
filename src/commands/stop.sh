@@ -1,7 +1,5 @@
 # file: src/commands/stop.sh
 
-# ================================[ Command ]================================= #
-
 stop_server() {
     local session="$1"
     local time="$2"
@@ -9,7 +7,7 @@ stop_server() {
     local wait="$4"
     local all="$5"
 
-    # =================================[ invoke ]================================= #
+    # INVOKE
 
     if [[ "$all" == "true" || "$session" != "$SESSION_NAME" ]]; then
         import "lib.remote.invoke"
@@ -24,7 +22,7 @@ stop_server() {
         return 0
     fi
 
-    # ===============================[ execution ]================================ #
+    # EXECUTION
 
     # Import required module
     log_info "import required modules"

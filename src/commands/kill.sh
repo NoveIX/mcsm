@@ -1,10 +1,9 @@
 # file: src/commands/kill.sh
 
-# ================================[ Command ]================================= #
-
 kill_server() {
     local session="$1"
     local confirm="$2"
+    local quiet="$3"
 
     # Block external tmux session kill attempts
     if [[ "$session" != "$SESSION_NAME" ]]; then

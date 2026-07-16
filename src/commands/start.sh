@@ -5,7 +5,7 @@ start_server() {
     local console="$2"
     local all="$3"
 
-    # =================================[ invoke ]================================= #
+    # INVOKE
 
     if [[ "$all" == "true" || "$session" != "$SESSION_NAME" ]]; then
         import "lib.remote.invoke"
@@ -23,7 +23,7 @@ start_server() {
         return 0
     fi
 
-    # ============================[ generate config ]============================= #
+    # GENERATE CONFIG
 
     # Genereting default config
     if [[ ! -f "$RUNTIME_CONF" ]]; then
@@ -46,7 +46,7 @@ start_server() {
         return 0
     fi
 
-    # ===============================[ execution ]================================ #
+    # EXECUTION
 
     # Import required module
     log_info "import required modules"
