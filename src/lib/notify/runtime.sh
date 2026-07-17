@@ -8,38 +8,57 @@ import "lib.util.convert.second"
 runtime_notify() {
     local type="$1"
     local msg="$2"
+    local color emoji
 
     # Check notification enabled
-    [[ "$RUNTIME_NOTIFY" == "true" ]] || return 0
+    [[ "$RUNTIME_NOTIFY" == "false" ]] && return 0
 
     case "$type" in
         info)
-            send_discord "$RUNTIME_WEBHOOK" "$SERVER_NAME" "$msg" "$DISCORD_GREEN" "info" || true
-            send_telegram "$RUNTIME_TOKEN" "$RUNTIME_CHATID" "<b>🔵 $SERVER_NAME</b>\n$msg" "info" || true
+            color="$DISCORD_GREEN"
+            emoji="🔵"
         ;;
 
         warn)
-            send_discord "$RUNTIME_WEBHOOK" "$SERVER_NAME" "$msg" "$DISCORD_YELLOW" "warn" || true
-            send_telegram "$RUNTIME_TOKEN" "$RUNTIME_CHATID" "<b>🟡 $SERVER_NAME</b>\n$msg" "warn" || true
+            color="$DISCORD_YELLOW"
+            emoji="🟡"
         ;;
 
         error)
-            send_discord "$RUNTIME_WEBHOOK" "$SERVER_NAME" "$msg" "$DISCORD_RED" "fail" || true
-            send_telegram "$RUNTIME_TOKEN" "$RUNTIME_CHATID" "<b>🔴 $SERVER_NAME</b>\n$msg" "fail" || true
+            color="$DISCORD_RED"
+            emoji="🔴"
         ;;
 
         fatal)
-            send_discord "$RUNTIME_WEBHOOK" "$SERVER_NAME" "$msg" "$DISCORD_RED" "fatal" || true
-            send_telegram "$RUNTIME_TOKEN" "$RUNTIME_CHATID" "<b>🟣 $SERVER_NAME</b>\n$msg" "fatal" || true
+            color="$DISCORD_RED"
+            emoji="🟣"
         ;;
 
         done)
-            send_discord "$RUNTIME_WEBHOOK" "$SERVER_NAME" "$msg" "$DISCORD_BLUE" "done" || true
-            send_telegram "$RUNTIME_TOKEN" "$RUNTIME_CHATID" "<b>🟢 $SERVER_NAME</b>\n$msg" "done" || true
+            color="$DISCORD_BLUE"
+            emoji="🟢"
         ;;
 
         *)
             log_error "invalid notification type: $type" "print"
+            return 1
         ;;
     esac
+
+    if [[ -n "$RUNTIME_WEBHOOK" ]]; then
+        send_discord \
+        "$RUNTIME_WEBHOOK" \
+        "$SERVER_NAME" \
+        "$msg" \
+        "$color" \
+        "$type" || true
+    fi
+
+    if [[ -n "$RUNTIME_TOKEN" && -n "$RUNTIME_CHATID" ]]; then
+        send_telegram \
+        "$RUNTIME_TOKEN" \
+        "$RUNTIME_CHATID" \
+        "<b>$emoji $SERVER_NAME</b>\n$msg" \
+        "$type" || true
+    fi
 }

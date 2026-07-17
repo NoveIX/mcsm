@@ -8,44 +8,61 @@ import "lib.util.convert.second"
 backup_notify() {
     local type="$1"
     local detail="${2:-}"
-    local msg
+    local msg color emoji
 
-    # Check notification enabled
-    [[ "$BACKUP_NOTIFY" == "true" ]] || return 0
+    [[ "$BACKUP_NOTIFY" == "false" ]] && return 0
 
     case "$type" in
         info)
             msg="Backup is starting"
-            send_discord "$BACKUP_WEBHOOK" "$SERVER_NAME" "$msg" "$DISCORD_BLUE" "info" || true
-            send_telegram "$BACKUP_TOKEN" "$BACKUP_CHATID" "<b>🔵 $SERVER_NAME</b>\n$msg" "info" || true
+            color="$DISCORD_BLUE"
+            emoji="🔵"
         ;;
 
         warn)
             msg="Backup warning\n\nReason:\n$detail"
-            send_discord "$BACKUP_WEBHOOK" "$SERVER_NAME" "$msg" "$DISCORD_YELLOW" "warn" || true
-            send_telegram "$BACKUP_TOKEN" "$BACKUP_CHATID" "<b>🟡 $SERVER_NAME</b>\n$msg" "warn" || true
+            color="$DISCORD_YELLOW"
+            emoji="🟡"
         ;;
 
         error)
             msg="Backup failed\n\nReason:\n$detail"
-            send_discord "$BACKUP_WEBHOOK" "$SERVER_NAME" "$msg" "$DISCORD_RED" "error" || true
-            send_telegram "$BACKUP_TOKEN" "$BACKUP_CHATID" "<b>🔴 $SERVER_NAME</b>\n$msg" "error" || true
+            color="$DISCORD_RED"
+            emoji="🔴"
         ;;
 
         fatal)
             msg="Backup fatal\n\nReason:\n$detail"
-            send_discord "$BACKUP_WEBHOOK" "$SERVER_NAME" "$msg" "$DISCORD_PURPLE" "fatal" || true
-            send_telegram "$BACKUP_TOKEN" "$BACKUP_CHATID" "<b>🟣 $SERVER_NAME</b>\n$msg" "fatal" || true
+            color="$DISCORD_PURPLE"
+            emoji="🟣"
         ;;
 
         done)
             msg="Backup completed\n\n$detail"
-            send_discord "$BACKUP_WEBHOOK" "$SERVER_NAME" "$msg" "$DISCORD_GREEN" "done" || true
-            send_telegram "$BACKUP_TOKEN" "$BACKUP_CHATID" "<b>🟢 $SERVER_NAME</b>\n$msg" "done" || true
+            color="$DISCORD_GREEN"
+            emoji="🟢"
         ;;
 
         *)
             log_error "invalid notification type: $type" "print"
+            return 1
         ;;
     esac
+
+    if [[ -n "$BACKUP_WEBHOOK" ]]; then
+        send_discord \
+        "$BACKUP_WEBHOOK" \
+        "$SERVER_NAME" \
+        "$msg" \
+        "$color" \
+        "$type" || true
+    fi
+
+    if [[ -n "$BACKUP_TOKEN" && -n "$BACKUP_CHATID" ]]; then
+        send_telegram \
+        "$BACKUP_TOKEN" \
+        "$BACKUP_CHATID" \
+        "<b>$emoji $SERVER_NAME</b>\n$msg" \
+        "$type" || true
+    fi
 }
