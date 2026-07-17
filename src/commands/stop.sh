@@ -35,7 +35,7 @@ stop_server() {
     log_info "check required dependencies"
     check_command "tmux" "fatal"
 
-    if exists_tmux_session "$session"; then
+    if exists_tmux_session "$SESSION_NAME"; then
 
         # Remove the restartctl file to indicate that the server is stopping
         remove_file "$RESTART_CTL" "restartctl"
@@ -43,26 +43,27 @@ stop_server() {
         # Stop the server with a warning message if the time time is greater than 30 seconds
         if (( time > 30 )); then
             local prewarn=$((time - 30))
-            send_tmux "$session" "0" "say Server will $mode in $time seconds. Please prepare to disconnect."
+            send_tmux "$SESSION_NAME" "0" "say Server will $mode in $time seconds. Please prepare to disconnect."
             sleep "$prewarn"
 
             # 30 Seconds - cit. Lester
-            send_tmux "$session" "0" "say Server will $mode in 30 seconds. Please prepare to disconnect."
+            send_tmux "$SESSION_NAME" "0" "say Server will $mode in 30 seconds. Please prepare to disconnect."
             sleep 30
         else
-            send_tmux "$session" "0" "say Server will $mode in $time seconds. Please prepare to disconnect."
+            send_tmux "$SESSION_NAME" "0" "say Server will $mode in $time seconds. Please prepare to disconnect."
             sleep "$time"
         fi
 
         # Send the stop command to the tmux session to initiate server shutdown.
-        send_tmux "$session" "0" "stop"
-        print "stopping server $session" "info"
+        send_tmux "$SESSION_NAME" "0" "stop"
+        print "stopping server $SESSION_NAME" "info"
+
+        # TODO Add retry
 
         # Wait for the tmux session is closed before returning
-        [[ "$wait" == "true" ]] && wait_tmux "$session"
-
+        [[ "$wait" == "true" ]] && wait_tmux "$SESSION_NAME"
         return 0
     fi
 
-    print "server $session is not running" "info"
+    print "server $SESSION_NAME is not running" "info"
 }

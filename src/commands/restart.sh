@@ -38,9 +38,9 @@ restart_server() {
     check_command "tmux" "fatal"
 
     # Restart server
-    if exists_tmux_session "$session"; then
-        stop_server "$session" "$time" "restart" "true" "$all"
+    if exists_tmux_session "$SESSION_NAME"; then
+        stop_server "$SESSION_NAME" "$time" "restart" "true" "$all"
     fi
 
-    start_server "$session" "$console" "$all"
+    start_server "$SESSION_NAME" "$console" "$all"
 }

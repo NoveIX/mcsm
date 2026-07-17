@@ -50,7 +50,7 @@ status_server() {
 
         # Get server port
         port=$(get_property "$SERVER_ROOT/server.properties" "server-port") || true
-        address="$session"
+        address="$SESSION_NAME"
 
         # Get server uptime
         if [[ -f "$UPTIME_TIMESTAMP" ]]; then

@@ -11,12 +11,6 @@ kill_server() {
         return 1
     fi
 
-    # Check confirm is a valid boolean value (true/false)
-    if [[ ! "$confirm" =~ ^(true|false)$ ]]; then
-        log_error "invalid confirm value $confirm (expected true|false)" "print"
-        return 1
-    fi
-
     # Check for confirmation flag
     if [[ "$confirm" == "false" ]]; then
         log_error "destructive operation blocked: --confirm-action required" "print"
@@ -33,11 +27,11 @@ kill_server() {
     check_command "tmux" "fatal"
 
     # Check if the tmux session exists.
-    if exists_tmux_session "$session"; then
-        kill_tmux "$session"
-        print "tmux session $session killed"
+    if exists_tmux_session "$SESSION_NAME"; then
+        kill_tmux "$SESSION_NAME"
+        print "tmux session $SESSION_NAME killed"
         return 0
     fi
 
-    print "tmux session $session does not exist" "info"
+    print "tmux session $SESSION_NAME does not exist" "info"
 }

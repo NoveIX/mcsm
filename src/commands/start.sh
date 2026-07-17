@@ -63,7 +63,7 @@ start_server() {
     check_command "java" "warn" || true
 
     # Check if the tmux session already exists
-    if ! exists_tmux_session "$session"; then
+    if ! exists_tmux_session "$SESSION_NAME"; then
         read_runtime
         read_backup
 
@@ -73,26 +73,26 @@ start_server() {
         create_file "$RESTART_CTL" "restartctl"
 
         # Create a new detached tmux session that runs the mcsl script
-        if tmux new-session -d -s "$session" -n "runtime" \
+        if tmux new-session -d -s "$SESSION_NAME" -n "runtime" \
         bash "$RUNTIME_SERVICE" "$MCSL_DIR" "$LOG_FILES"; then
-            log_info "tmux session does not exist, create new session: $session"
-            print "starting server $session"
+            log_info "created runtime tmux window server: $SESSION_NAME"
+            print "starting server $SESSION_NAME"
         fi
 
         # Create a new detached tmux window for backup operations
         if [[ "$BACKUP_ENABLED" == "true" ]]; then
-            if tmux new-window -t "$session" -n "backup" \
-            bash "$BACKUP_SERVICE" "$MCSL_DIR" "$LOG_FILES" "$session"; then
-                log_info "tmux window for backup does not exist, create new window: backup"
-                print "starting backup scheduler for server $session"
+            if tmux new-window -t "$SESSION_NAME" -n "backup" \
+            bash "$BACKUP_SERVICE" "$MCSL_DIR" "$LOG_FILES" "$SESSION_NAME"; then
+                log_info "created backup tmux window server: $SESSION_NAME"
+                print "starting backup scheduler"
             fi
         fi
 
         # Connect to tmux session
-        [[ "$console" == "true" ]] && attach_tmux "$session"
+        [[ "$console" == "true" ]] && attach_tmux "$SESSION_NAME"
         return 0
     fi
 
-    print "server $session is running" "info"
+    print "server $SESSION_NAME is running" "info"
     return 0
 }
