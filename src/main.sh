@@ -27,7 +27,7 @@ main() {
     shift || true
 
     # Initialize variables for flags
-    local session time console wait host port dest user key all confirm
+    local session time console wait host port dest user key yes restart norestart all quiet confirm
 
     # Import required module
     import "lib.core.param.require"
@@ -61,10 +61,14 @@ main() {
                         validate_flag "all" "${2:-}"
                     ;;
 
-                    *)
-                        log_error "unknown argument: -$flag" "print"
-                        return 1
-                    ;;
+                    q)
+                        quiet="true"
+                        validate_flag "quiet" "${2:-}"
+
+                        *)
+                            log_error "unknown argument: -$flag" "print"
+                            return 1
+                        ;;
                 esac
             done
 
@@ -134,8 +138,33 @@ main() {
                 shift 2
             ;;
 
+            --yes|-y)
+                yes="true"
+                validate_flag "yes" "${2:-}"
+                shift
+            ;;
+
+            --restart)
+                restart="true"
+                validate_flag "restart" "${2:-}"
+                shift
+            ;;
+
+            --no-restart)
+                norestart="true"
+                validate_flag "norestart" "${2:-}"
+                shift
+            ;;
+
+
             --all|-a)
                 all="true"
+                validate_flag "all" "${2:-}"
+                shift
+            ;;
+
+            --quiet|-q)
+                quiet="true"
                 validate_flag "all" "${2:-}"
                 shift
             ;;
@@ -147,8 +176,14 @@ main() {
             ;;
 
             *)
-                log_error "unknown argument: $1" "print"
-                return 1
+                if [[ "$cmd" == "service" ]]; then
+                    srvname="$1"
+                    srvaction="$2"
+                    shift 2
+                else
+                    log_error "unknown argument: $1" "print"
+                    return 1
+                fi
             ;;
         esac
     done
@@ -163,7 +198,9 @@ main() {
     dest=${dest:-}
     user=${user:-}
     key=${key:-}
+    yes=${yes:-false}
     all=${all:-false}
+    quiet=${quiet:-false}
     confirm=${confirm:-false}
 
     # Validate parameter
@@ -227,7 +264,7 @@ main() {
         #
         service)
             import "commands.service"
-
+            servicectl "$session" "$srvname" "$srvaction"
         ;;
 
         # SelfUpdate command. Updates the mcsl script itself.
