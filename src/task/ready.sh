@@ -50,7 +50,7 @@ log_setting "$LOGS_DIR/runtime" "info" "noprint" "$LOG_MODE"
 read_notify || pause
 
 # Change dir to Minecraft server
-cd "$MCSL_DIR/.."
+cd "$SERVER_ROOT"
 log_info "starting mcsl ready task" "print"
 
 # ==============================[ runtime task ]============================== #
