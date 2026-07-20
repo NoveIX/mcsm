@@ -7,8 +7,9 @@ migrate_server() {
     local key="$4"
     local port="$5"
     local time="$6"
-    local confirm="$7"
+    local yes="$7"
     local restart="$8"
+    local norestart"$9"
 
     # Check mandatory parameters
     require_param "dest" "$dest" "migrate"
@@ -16,7 +17,7 @@ migrate_server() {
     [[ "$dest" == *:* ]] && host="${dest%%:*}"
     if [[ -z "$host" ]]; then
         log_info "missing host parameter, performing local migration"
-        migrate_local "$dest" "$time"
+        migrate_local "$dest" "$time" "$yes" "$restart" "$norestart"
     else
         log_info "host parameter detected, performing remote migration"
         migrate_remote "$@"
@@ -28,8 +29,9 @@ migrate_server() {
 migrate_local() {
     local dest="$1"
     local time="$2"
-    local confirm="$3"
+    local yes="$3"
     local restart="$4"
+    local norestart"$5"
     local red="\033[31m"
     local yellow="\033[33m"
     local green="\033[32m"
@@ -76,22 +78,19 @@ migrate_local() {
     fi
 
     # Migrate information
-    if [[ "$confirm" == "false" ]]; then
-        print
-        print "source:      $SERVER_ROOT/"
-        print "destination: $dest/"
-        print "mode:        move"
-        print
-        print "${yellow}WARNING${reset}: source directory will be removed after migration."
-        print
-    fi
+    print
+    print "${green}source:${reset}  $SERVER_ROOT/"
+    print "${green}dest:${reset}    $dest/"
+    print "${green}mode:${reset}    move"
+    print
+    print "${yellow}WARNING:${reset} source directory will be removed after migration."
+    print
     log_info "local move: $SERVER_ROOT/ -> $dest/"
 
-    # Check if session exist
-    exists_tmux_session "$SESSION_NAME" && dot="${green}●${reset}"
-
     # Check if user wants to continue
-    if [[ "$confirm" == "false" ]]; then
+    if [[ "$yes" == "false" ]]; then
+        exists_tmux_session "$SESSION_NAME" && dot="${green}●${reset}"
+
         printf '%b' "$dot "
         read -r -p "Server $SESSION_NAME will be stopped if running. Proceed with migration? [y/N]: " answer
         if [[ "${answer,,}" != "y" ]]; then
@@ -139,10 +138,17 @@ migrate_local() {
         return 1
     fi
 
+    # Log migration completion
     print "migration completed"; print
 
-    # Start server after migration (default: yes)
+    # Restart policy:
+    # --restart    -> always restart
+    # --no-restart -> never restart
+    # default      -> ask the user
+
     if [[ "$restart" != "true" ]]; then
+        [[ "$norestart" == "true" ]] && return 0
+
         printf '%b' "${blue}●${reset} "
         read -r -p "Start migrated server now? [Y/n]: " answer
 
@@ -161,8 +167,9 @@ migrate_remote() {
     local key="$4"
     local port="$5"
     local time="$6"
-    local confirm="$7"
+    local yes="$7"
     local restart="$8"
+    local norestart="$9"
     local red="\033[31m"
     local yellow="\033[33m"
     local green="\033[32m"
@@ -240,22 +247,19 @@ migrate_remote() {
 
     # Migrate information
     local login="${user:+$user@}$host"
-    if [[ "$confirm" == "false" ]]; then
-        print
-        print "source:      $SERVER_ROOT/"
-        print "destination: $login:$dest/"
-        print "mode:        move"
-        print
-        print "${yellow}WARNING${reset}: source directory will be removed after migration."
-        print
-    fi
+    print
+    print "${green}source:${reset}  $SERVER_ROOT/"
+    print "${green}dest:${reset}    $login:$dest/"
+    print "${green}mode:${reset}    move"
+    print
+    print "${yellow}WARNING${reset}: source directory will be removed after migration."
+    print
     log_info "remote move: $SERVER_ROOT/ -> $login:$dest/"
 
-    # Check if session exist
-    exists_tmux_session "$SESSION_NAME" && dot="${green}●${reset}"
-
     # Check if user wants to continue
-    if [[ "$confirm" == "false" ]]; then
+    if [[ "$yes" == "false" ]]; then
+        exists_tmux_session "$SESSION_NAME" && dot="${green}●${reset}"
+
         printf '%b ' "$dot"
         read -r -p "Server $SESSION_NAME will be stopped if running. Proceed with migration? [y/N]: " answer
         if [[ "${answer,,}" != "y" ]]; then
@@ -315,10 +319,17 @@ migrate_remote() {
         return 1
     fi
 
+    # Log migration completion
     print "migration completed"; print
 
-    # Start server after migration (default: yes)
+    # Restart policy:
+    # --restart    -> always restart
+    # --no-restart -> never restart
+    # default      -> ask the user
+
     if [[ "$restart" != "true" ]]; then
+        [[ "$norestart" == "true" ]] && return 0
+
         printf '%b' "${blue}●${reset} "
         read -r -p "Start migrated server now? [Y/n]: " answer
 

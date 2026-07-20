@@ -28,6 +28,7 @@ stop_server() {
     log_info "import required modules"
     import "lib.core.command"
     import "lib.filesystem.remove"
+    #import "lib.filesystem.wait"
     import "lib.tmux.send"
     import "lib.tmux.wait"
 
@@ -58,7 +59,16 @@ stop_server() {
         send_tmux "$SESSION_NAME" "0" "stop"
         print "stopping server $SESSION_NAME" "info"
 
-        # TODO Add retry
+        # Retry stop server
+        #if ! wait_pattern "$SERVER_ROOT/logs/latest.log" "Stopping the server" "120"; then
+        #    log_warn "timeout waiting for server to stop. Retry sending stop command." "print"
+        #    send_tmux "$SESSION_NAME" "0" "stop"
+        #    if ! wait_pattern "$SERVER_ROOT/logs/latest.log" "Stopping the server" "120"; then
+        #        log_error "timeout waiting for server to stop. Server may not have stopped cleanly." "print"
+        #        print "server $SESSION_NAME may not have stopped cleanly"
+        #        return 1
+        #    fi
+        #fi
 
         # Wait for the tmux session is closed before returning
         [[ "$wait" == "true" ]] && wait_tmux "$SESSION_NAME"

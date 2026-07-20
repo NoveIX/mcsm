@@ -27,7 +27,7 @@ main() {
     shift || true
 
     # Initialize variables for flags
-    local session time console wait host port dest user key yes restart norestart all quiet confirm
+    local session time console wait host port dest user key yes restart norestart all confirm
 
     # Import required module
     import "lib.core.param.require"
@@ -59,12 +59,6 @@ main() {
                     a)
                         all="true"
                         validate_flag "all" "${2:-}"
-                    ;;
-
-                    q)
-                        quiet="true"
-                        validate_flag "quiet" "${2:-}"
-
                     ;;
 
                     *)
@@ -165,12 +159,6 @@ main() {
                 shift
             ;;
 
-            --quiet|-q)
-                quiet="true"
-                validate_flag "all" "${2:-}"
-                shift
-            ;;
-
             --confirm-action)
                 confirm="true"
                 validate_flag "confirm" "${2:-}"
@@ -201,8 +189,9 @@ main() {
     user=${user:-}
     key=${key:-}
     yes=${yes:-false}
+    restart=${restart:-false}
+    norestart=${norestart:-false}
     all=${all:-false}
-    quiet=${quiet:-false}
     confirm=${confirm:-false}
 
     # Validate parameter
@@ -248,13 +237,13 @@ main() {
         # Migration command. Migrates the server to another location or host.
         migrate)
             import "commands.migrate"
-            migrate_server "$dest" "$host" "$user" "$key" "$port" "$time" "$confirm" "$restart"
+            migrate_server "$dest" "$host" "$user" "$key" "$port" "$time" "$yes" "$restart" "$norestart"
         ;;
 
         # Sync command. Sync the server files to another location or host.
         sync)
             import "commands.sync"
-            sync_server "$dest" "$host" "$user" "$key" "$port" "$confirm"
+            sync_server "$dest" "$host" "$user" "$key" "$port" "$yes"
         ;;
 
         # Kill command. Kill the tmux session of the server immediately.

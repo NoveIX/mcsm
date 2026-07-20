@@ -6,15 +6,15 @@ sync_server() {
     local user="$3"
     local key="$4"
     local port="$5"
-    local confirm="$6"
+    local yes="$6"
 
     # Check mandatory parameters
-    require_param "dest" "$dest" "migrate"
+    require_param "dest" "$dest" "sync"
 
     [[ "$dest" == *:* ]] && host="${dest%%:*}"
     if [[ -z "$host" ]]; then
         log_info "missing host parameter, performing local sync"
-        sync_local "$dest" "$time" "$confirm"
+        sync_local "$dest" "$yes"
     else
         log_info "host parameter detected, performing remote sync"
         sync_remote "$@"
@@ -25,8 +25,7 @@ sync_server() {
 
 sync_local() {
     local dest="$1"
-    local time="$2"
-    local confirm="$3"
+    local yes="$2"
     local red="\033[31m"
     local yellow="\033[33m"
     local green="\033[32m"
@@ -72,22 +71,19 @@ sync_local() {
     fi
 
     # Sync information
-    if [[ "$confirm" == "false" ]]; then
-        print
-        print "source:      $SERVER_ROOT/"
-        print "destination: $dest/"
-        print "mode:        mirror"
-        print
-        print "${yellow}WARNING${reset}: destination files will be deleted to match the source."
-        print
-    fi
+    print
+    print "${green}source:${reset}  $SERVER_ROOT/"
+    print "${green}dest:${reset}    $dest/"
+    print "${green}mode:${reset}    mirror"
+    print
+    print "${yellow}WARNING${reset}: destination files will be deleted to match the source."
+    print
     log_info "local sync: $SERVER_ROOT/ -> $dest/"
 
-    # Check if session exist
-    exists_tmux_session "$SESSION_NAME" && dot="${green}●${reset}"
-
     # Check if user wants to continue
-    if [[ "$confirm" == "false" ]]; then
+    if [[ "$yes" == "false" ]]; then
+        exists_tmux_session "$SESSION_NAME" && dot="${green}●${reset}"
+
         printf '%b' "$dot "
         read -r -p "Create mirror copy of the server $SESSION_NAME. Proceed with sync? [y/N]: " answer
         if [[ "${answer,,}" != "y" ]]; then
@@ -103,8 +99,8 @@ sync_local() {
     fi
 
     # Sync server
-    print; print "synchronization in progress"
-    rsync -ah --delete --info=progress2 "$SERVER_ROOT/" "$dest/" || rc=$?
+    print; print "synchronization in progress" "info"
+    rsync -ah --info=progress2 --delete "$SERVER_ROOT/" "$dest/" || rc=$?
     rc=$?
 
     if ! (( rc == 0 )); then
@@ -112,7 +108,7 @@ sync_local() {
         return 1
     fi
 
-    # Log migration completion
+    # Log synchronization completion
     print "synchronization completed" "info"; print
 }
 
@@ -124,7 +120,7 @@ sync_remote() {
     local user="$3"
     local key="$4"
     local port="$5"
-    local confirm="$6"
+    local yes="$6"
     local red="\033[31m"
     local yellow="\033[33m"
     local green="\033[32m"
@@ -201,22 +197,19 @@ sync_remote() {
 
     # Sync information
     local login="${user:+$user@}$host"
-    if [[ "$confirm" == "false" ]]; then
-        print
-        print "source:      $SERVER_ROOT/"
-        print "destination: $login:$dest/"
-        print "mode:        mirror"
-        print
-        print "${yellow}WARNING${reset}: destination files will be deleted to match the source."
-        print
-    fi
+    print
+    print "${green}source:${reset}  $SERVER_ROOT/"
+    print "${green}dest:${reset}    $login:$dest/"
+    print "${green}mode:${reset}    mirror"
+    print
+    print "${yellow}WARNING:${reset} destination files will be deleted to match the source."
+    print
     log_info "remote sync: $SERVER_ROOT/ -> $login:$dest/"
 
-    # Check if session exist
-    exists_tmux_session "$SESSION_NAME" && dot="${green}●${reset}"
-
     # Check if user wants to continue
-    if [[ "$confirm" == "false" ]]; then
+    if [[ "$yes" == "false" ]]; then
+        exists_tmux_session "$SESSION_NAME" && dot="${green}●${reset}"
+
         printf '%b' "$dot "
         read -r -p "Create mirror copy of the server $SESSION_NAME. Proceed with sync? [y/N]: " answer
         if [[ "${answer,,}" != "y" ]]; then
@@ -245,7 +238,7 @@ sync_remote() {
 
     # Sync server
     print; print "synchronization in progress" "info"
-    rsync -azh --delete --info=progress2 -e "${ssh_cmd[*]}" "$SERVER_ROOT/" "$login:$dest/" || rc=$?
+    rsync -azh --info=progress2 --delete -e "${ssh_cmd[*]}" "$SERVER_ROOT/" "$login:$dest/" || rc=$?
     rc=$?
 
     if ! (( rc == 0 )); then
@@ -253,6 +246,6 @@ sync_remote() {
         return 1
     fi
 
-    # Log migration completion
+    # Log synchronization completion
     print "synchronization completed" "info"; print
 }

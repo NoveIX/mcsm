@@ -62,3 +62,8 @@ fi
 
 # Send notification that server is ready
 runtime_notify "done" "Server ready"
+
+log_info "shutting down mcsl ready task" "print"
+
+# sleep to read logs before tmux close
+sleep 10
