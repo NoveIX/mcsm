@@ -74,16 +74,16 @@ start_server() {
 
         # Create a new detached tmux session that runs the mcsl script
         if tmux new-session -d -s "$SESSION_NAME" -n "runtime" \
-        bash "$RUNTIME_SERVICE" "$MCSL_DIR" "$LOG_FILES"; then
-            log_info "created runtime tmux window server: $SESSION_NAME"
+        bash "$RUNTIME_SERVICE" "$MCSL_DIR" "$LOG_FILES" "$SESSION_NAME"; then
+            log_info "created new tmux session. Runtime service (server: $SESSION_NAME)"
             print "starting server $SESSION_NAME"
         fi
 
         # Create a new detached tmux window for backup operations
         if [[ "$BACKUP_ENABLED" == "true" ]]; then
-            if tmux new-window -t "$SESSION_NAME" -n "backup" \
+            if tmux new-window -t "$SESSION_NAME:1" -n "backup" \
             bash "$BACKUP_SERVICE" "$MCSL_DIR" "$LOG_FILES" "$SESSION_NAME"; then
-                log_info "created backup tmux window server: $SESSION_NAME"
+                log_info "created new tmux window. Backup scheduler (server: $SESSION_NAME)"
                 print "starting backup scheduler"
             fi
         fi

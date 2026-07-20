@@ -1,11 +1,8 @@
 #!/usr/bin/env bash
 
-# File: runtime.sh
-# Description: mcsl runtime controller for Minecraft server
-# Author: NoveIX
-# SPDX-License-Identifier: GPL-3.0-or-later
+# file: src/service/runtime.sh
 
-set -euo pipefail
+#set -euo pipefail
 
 # ================================[ Function ]================================ #
 
@@ -19,6 +16,7 @@ pause() {
 # service parameters
 readonly MCSL_DIR="$1"
 readonly LOG_MODE="$2"
+readonly SESSION_NAME="$3"
 
 # ===============================[ constants ]================================ #
 
@@ -83,6 +81,11 @@ while [[ "$runtime_status" != "stop" ]]; do
 
     # set return code for server start command
     rc=0
+
+    if tmux new-window -d -t "$SESSION_NAME":10 -n "ready" \
+    bash "$TASK_READY" "$MCSL_DIR" "$LOG_FILES" "$SESSION_NAME"; then
+        log_info "created new tmux window. Ready task (server: $SESSION_NAME)"
+    fi
 
     # Start Minecraft server
     if [[ -f "$START_COMMAND" ]]; then

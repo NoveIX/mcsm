@@ -1,11 +1,8 @@
 #!/usr/bin/env bash
 
-# File: backup.sh
-# Description: mcsl backup controller for Minecraft server
-# Author: NoveIX
-# SPDX-License-Identifier: GPL-3.0-or-later
+# file: src/service/backup.sh
 
-#set -euo pipefail
+set -euo pipefail
 
 # ================================[ Function ]================================ #
 
@@ -97,7 +94,7 @@ done
 
 # Wait Minecraft server to be ready
 log_info "runtime state file found. waiting for Minecraft server to be ready" "print"
-wait_pattern "$SERVER_ROOT/logs/latest.log" "Done (" || log_warn "timeout waiting for Minecraft server to be ready" "print"
+wait_pattern "$SERVER_ROOT/logs/latest.log" "Done (" "150" || log_warn "timeout waiting for Minecraft server to be ready" "print"
 log_info "backup service use this current settings (delay: $BACKUP_DELAY m, format: $BACKUP_FORMAT, keep: $KEEP_LAST)" "print"
 
 # Runtime state variables

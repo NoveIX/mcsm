@@ -65,10 +65,12 @@ main() {
                         quiet="true"
                         validate_flag "quiet" "${2:-}"
 
-                        *)
-                            log_error "unknown argument: -$flag" "print"
-                            return 1
-                        ;;
+                    ;;
+
+                    *)
+                        log_error "unknown argument: -$flag" "print"
+                        return 1
+                    ;;
                 esac
             done
 

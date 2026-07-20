@@ -10,7 +10,7 @@ create_file() {
 
     # ensure restart/keep-alive file exists
     if printf '%s\n' "$value" > "$file"; then
-        log_info "created $name: $file"
+        log_info "created file: $name"
         return 0
     fi
 

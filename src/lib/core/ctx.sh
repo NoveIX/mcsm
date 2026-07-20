@@ -19,6 +19,9 @@ readonly COMMANDS_DIR="$SRC_DIR/commands"
 readonly RUNTIME_SERVICE="$SRC_DIR/service/runtime.sh"
 readonly BACKUP_SERVICE="$SRC_DIR/service/backup.sh"
 
+# Task script
+readonly TASK_READY="$SRC_DIR/task/ready.sh"
+
 # Runtime state
 readonly RUNTIME_DIR="$MCSL_DIR/.runtime"
 readonly RUNTIME_STATE="$RUNTIME_DIR/runtime.state"
