@@ -255,7 +255,7 @@ main() {
         #
         service)
             import "commands.service"
-            servicectl "$session" "$srvname" "$srvaction"
+            servicectl "$srvname" "$srvaction"
         ;;
 
         # SelfUpdate command. Updates the mcsl script itself.

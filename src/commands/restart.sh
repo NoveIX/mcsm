@@ -39,7 +39,10 @@ restart_server() {
 
     # Restart server
     if exists_tmux_session "$SESSION_NAME"; then
-        stop_server "$SESSION_NAME" "$time" "restart" "true" "$all"
+        stop_server "$SESSION_NAME" "$time" "restart" "true" "$all" || {
+            log_error "timeout waiting for server to stop" "print"
+            return 1
+        }
     fi
 
     start_server "$SESSION_NAME" "$console" "$all"

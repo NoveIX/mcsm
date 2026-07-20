@@ -2,7 +2,7 @@
 
 # file: src/service/backup.sh
 
-set -euo pipefail
+#set -euo pipefail
 
 # ================================[ Function ]================================ #
 
@@ -64,7 +64,7 @@ read_notify || pause
 check_archive || pause
 
 # Change dir to Minecraft server
-cd "$MCSL_DIR/.."
+cd "$SERVER_ROOT"
 log_info "changing working directory to the Minecraft server root" "print"
 
 # Read world directory from server.properties
@@ -92,9 +92,15 @@ while [[ ! -f "$RUNTIME_STATE" ]]; do
     sleep 1
 done
 
-# Wait Minecraft server to be ready
-log_info "runtime state file found. waiting for Minecraft server to be ready" "print"
-wait_pattern "$SERVER_ROOT/logs/latest.log" "Done (" "150" || log_warn "timeout waiting for Minecraft server to be ready" "print"
+# Skip server ready if service was restard
+read -r server_uptime < "$UPTIME_TIMESTAMP"
+if (( server_uptime < 150 )); then
+    # Wait Minecraft server to be ready
+    log_info "runtime state file found. waiting for Minecraft server to be ready" "print"
+    wait_pattern "$SERVER_ROOT/logs/latest.log" "Done (" "150" ||
+    log_warn "timeout waiting for Minecraft server to be ready" "print"
+fi
+
 log_info "backup service use this current settings (delay: $BACKUP_DELAY m, format: $BACKUP_FORMAT, keep: $KEEP_LAST)" "print"
 
 # Runtime state variables
@@ -116,12 +122,12 @@ while [[ "$backup_status" != "stop" ]]; do
     # Sleep delay before next backup, check if runtime.state and backup.state exists every second
     while [[ $elapsed -lt $delay ]]; do
         if [[ ! -f "$RUNTIME_STATE" ]]; then
-            log_info "runtime service state file not found. Stopping backup process" "print"
+            log_info "runtime service state file not found. Stopping backup service" "print"
             backup_status="stop"; continue 2
         fi
 
         if [[ ! -f "$BACKUP_STATE" ]]; then
-            log_info "backup service state file not found. Stopping backup process" "print"
+            log_info "backup service state file not found. Stopping backup service" "print"
             backup_status="stop"; continue 2
         fi
 
@@ -163,7 +169,7 @@ while [[ "$backup_status" != "stop" ]]; do
     fi
 
     # Wait for the "Saved the game" message in the latest.log file
-    if ! wait_pattern "$SERVER_ROOT/logs/latest.log" "Saved the game"; then
+    if ! wait_pattern "$SERVER_ROOT/logs/latest.log" "Saved the game" "120"; then
         log_error "timeout waiting for save-all operation" "print"
         backup_notify "error" "Server save operation timed out"
 
@@ -176,7 +182,7 @@ while [[ "$backup_status" != "stop" ]]; do
         fi
 
         # Wait retry
-        if ! wait_pattern "$SERVER_ROOT/logs/latest.log" "Saved the game"; then
+        if ! wait_pattern "$SERVER_ROOT/logs/latest.log" "Saved the game" "120"; then
             log_error "timeout waiting for save-all operation during retry. Backup skipped" "print"
             backup_notify "error" "Server save operation timed out during retry. Backup skipped"
             continue
@@ -253,7 +259,7 @@ done
 
 # Stop mcsl backup process
 log_info "shutting down mcsl backup service" "print"
-remove_file "$BACKUP_STATE" "runtime.state"
+remove_file "$BACKUP_STATE" "backup.state"
 
 # sleep to read logs before tmux close
 sleep 10

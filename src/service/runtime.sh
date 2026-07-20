@@ -55,7 +55,7 @@ read_runtime || pause
 read_notify || pause
 
 # Change dir to Minecraft server
-cd "$MCSL_DIR/.."
+cd "$SERVER_ROOT"
 log_info "changing working directory to the Minecraft server root" "print"
 
 # Start mcsl runtime process

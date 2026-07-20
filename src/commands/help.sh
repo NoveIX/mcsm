@@ -76,3 +76,8 @@ Author:               NoveIX
 Version:              $version
 EOF
 }
+
+help_start() {
+
+}
+
