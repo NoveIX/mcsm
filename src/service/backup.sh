@@ -97,7 +97,7 @@ read -r server_uptime < "$UPTIME_TIMESTAMP"
 if (( server_uptime < 150 )); then
     # Wait Minecraft server to be ready
     log_info "runtime state file found. waiting for Minecraft server to be ready" "print"
-    wait_pattern "$SERVER_ROOT/logs/latest.log" "Done (" "150" ||
+    wait_pattern "$SERVER_ROOT/logs/latest.log" "Done (" "180" ||
     log_warn "timeout waiting for Minecraft server to be ready" "print"
 fi
 
