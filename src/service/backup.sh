@@ -149,7 +149,7 @@ while [[ "$backup_status" != "stop" ]]; do
     fi
 
     # Backup name
-    ts=$(date +%Y-%m-%d-%H-%M-%S)
+    ts=$(date +%Y-%m-%d_%H-%M-%S)
     backup_notify "info"
 
     # Check if the tmux session window exists
