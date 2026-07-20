@@ -159,8 +159,6 @@ while [[ "$backup_status" != "stop" ]]; do
         backup_status="stop"; continue
     fi
 
-    sts=$(date +%s%3N)
-
     # Send save-all command to the tmux session and wait for the save to complete
     if ! send_tmux "$SESSION_NAME" "0" "save-all flush"; then
         log_error "failed to send save-all command (session: $SESSION_NAME, window: 0)" "print"
@@ -193,6 +191,9 @@ while [[ "$backup_status" != "stop" ]]; do
     if ! send_tmux "$SESSION_NAME" "0" "say Starting Server backup"; then
         log_warn "failed to send backup notification command (session: $SESSION_NAME, window: 0)" "print"
     fi
+
+    sleep 0.1
+    sts=$(date +%s%3N)
 
     # Determine the backup file name based on the selected format
     archive_name="$ts.$BACKUP_FORMAT"
