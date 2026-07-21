@@ -2,6 +2,7 @@
 
 main() {
     local cmd="${1:-}"
+    cmd="${cmd,,}"
 
     # Check if the command is provided
     if [[ -z "$cmd" ]]; then
@@ -10,14 +11,15 @@ main() {
     fi
 
     # If the command is help, print help immediately and skip flag parsing.
-    if [[ "${cmd,,}" =~ ^(help|--help|-h)$ ]]; then
+    if [[ "$cmd" =~ ^(help|--help|-h)$ ]]; then
         import "commands.help"
-        print_help
+        local help_cmd="${2:-}"
+        print_help "${help_cmd,,}"
         return 0
     fi
 
     # If the command is version, print version immediately and skip flag parsing.
-    if [[ "${cmd,,}" =~ ^(version|--version|-v)$ ]]; then
+    if [[ "$cmd" =~ ^(version|--version|-v)$ ]]; then
         import "commands.version"
         print_version
         return 0
@@ -203,7 +205,7 @@ main() {
     validate_param user "$user"
     validate_param key "$key"
 
-    case "${cmd,,}" in
+    case "$cmd" in
         # Start command. Starts the server.
         start)
             import "commands.start"
