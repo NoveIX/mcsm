@@ -85,7 +85,7 @@ while [[ "$runtime_status" != "stop" ]]; do
     # Start ready task in a new tmux window
     if [[ "$RUNTIME_NOTIFY" == "true" ]] &&
     tmux new-window -d \
-    -t "$SESSION_NAME":10 \
+    -t "$SESSION_NAME":3 \
     -n "ready" \
     bash "$TASK_READY" "$MCSL_DIR" "$LOG_FILES"; then
         log_info "created new tmux window. Ready task (server: $SESSION_NAME)"
