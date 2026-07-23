@@ -2,7 +2,7 @@
 
 # file: src/service/runtime.sh
 
-#set -euo pipefail
+set -euo pipefail
 
 # ================================[ Function ]================================ #
 

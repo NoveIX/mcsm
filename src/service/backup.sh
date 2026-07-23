@@ -2,7 +2,7 @@
 
 # file: src/service/backup.sh
 
-#set -euo pipefail
+set -euo pipefail
 
 # ================================[ Function ]================================ #
 
@@ -192,7 +192,7 @@ while [[ "$backup_status" != "stop" ]]; do
         log_warn "failed to send backup notification command (session: $SESSION_NAME, window: 0)" "print"
     fi
 
-    sleep 0.1
+    sleep 1
     sts=$(date +%s%3N)
 
     # Determine the backup file name based on the selected format
